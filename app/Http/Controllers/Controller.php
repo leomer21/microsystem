@@ -17,7 +17,7 @@ use App;
 
 class Controller extends BaseController
 {
-    use AuthorizesRequests, AuthorizesResources, DispatchesJobs, ValidatesRequests;
+    use AuthorizesRequests, DispatchesJobs, ValidatesRequests;
     
     public function __construct(Request $request){
         $subdomain = url()->full();

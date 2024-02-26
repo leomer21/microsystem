@@ -27,8 +27,6 @@ class LandingController extends Controller
      */
     public function index()
     {
-
-
         $this->visitors = new Visitors;
         $this->visitorInfo();
         $template = App\Settings::where('type', 'template')->value('value');
