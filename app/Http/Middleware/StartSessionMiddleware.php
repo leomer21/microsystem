@@ -22,6 +22,6 @@ class StartSessionMiddleware extends BaseStartSession
             Config::set('session.driver', 'array');
         }
 
-        return parent::handle($request, $next);
+        return $next($request);
     }
 }
