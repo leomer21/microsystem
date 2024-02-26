@@ -1,0 +1,874 @@
+<?php
+namespace App\Http\Controllers;
+
+use App\Http\Requests;
+use Illuminate\Http\Request;
+use App;
+use Input;
+use Redirect;
+use Auth;
+use Carbon\Carbon;
+use SSH;
+use DB;
+
+class InstallationController extends Controller
+{
+
+    public function installation(Request $request){
+        // exec('/sbin/service httpd stop');
+        // print_r($out);
+        // die('s');
+        
+        $today = date("Y-m-d");
+        $today_time = date("g:i a");
+        $created_at = date("Y-m-d H:i:s");
+
+        $subdomain=$request->input('domain');
+        $fullDomain=$subdomain.".microsystem.cloud";
+        $serverLocalIP="10.0.1.4";
+        $dbName=$request->input('domain');
+        $password=$request->input('password');
+        $name=$request->input('name');
+        $mail=$request->input('mail');
+
+
+        // check if domain exist
+        if(DB::table('customers')->where('url',$fullDomain)->count()>0){$cantStart=1;}
+
+        // check if mail exist
+        if(DB::table('customers')->where('mail',$request->input('mail'))->count()>0){$cantStart=1;}
+
+        // check if serial exist
+        if(DB::table('serials')->where('serial',$request->input('serial'))->count()>0){$cantStart=1;}
+
+
+        DB::statement("DROP database IF EXISTS $dbName;");
+        
+        DB::statement("create database $dbName;");
+
+        DB::statement("CREATE TABLE $dbName.admins (
+        `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+        `name` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+        `uname` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+        `password` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+        `email` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+        `mobile` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+        `phone` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+        `address` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+        `gender` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+        `birth_date` date NOT NULL,
+        `lang` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+        `type` int(1) DEFAULT NULL,
+        `credit` int(11) DEFAULT NULL,
+        `branches` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `permissions` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `photo` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `country` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `created_at` timestamp NULL DEFAULT NULL,
+        `updated_at` timestamp NULL DEFAULT NULL,
+        `remember_token` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+        `roles` int(11) NOT NULL,
+        `notes` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+        PRIMARY KEY (`id`)
+        ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=2 ;");
+
+         DB::statement("INSERT INTO $dbName.admins (`id`, `name`, `uname`, `password`, `email`, `mobile`, `phone`, `address`, `gender`, `birth_date`, `lang`, `type`, `credit`, `branches`, `permissions`, `photo`, `country`, `created_at`, `updated_at`, `remember_token`, `roles`, `notes`) VALUES
+        (1, 'Administrator', 'admin', '".'$2y$10$UoPy4AvHNOKlkruaFxJwNu92cQOYpllB/wCDzi3rpKaTStUSFFPGG'."', 'admin', '', '01145929570', '', '1', '0000-00-00', 'ar', 1, 681, '1', 'dashboard,users,onlineusers,networks,groups,branches,administration,packages,cards,settings,landingpage', 'citystars2.jpg', 'Select a Country', '2016-06-26 13:23:45', '2017-04-19 23:26:28', 'ci5SVs2iyHFD9k4DhquMrNA7Qg157cpSUsvhtCUK5vacslR46tlxfbqN1dkp', 0, '');");
+
+        DB::statement("CREATE TABLE $dbName.area_groups (
+        `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+        `name` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+        `is_active` tinyint(1) NOT NULL,
+        `as_system` tinyint(1) NOT NULL,
+        `radius_type` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
+        `url_redirect` varchar(200) COLLATE utf8_unicode_ci NOT NULL,
+        `url_redirect_Interval` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `session_time` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `port_limit` varchar(10) COLLATE utf8_unicode_ci NOT NULL,
+        `idle_timeout` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `quota_limit_upload` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
+        `quota_limit_download` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
+        `quota_limit_total` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
+        `speed_limit` varchar(70) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `renew` varchar(5) COLLATE utf8_unicode_ci NOT NULL,
+        `if_downgrade_speed` varchar(10) COLLATE utf8_unicode_ci NOT NULL,
+        `end_speed` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `network_id` int(11) NOT NULL,
+        `auto_login` tinyint(1) DEFAULT '0',
+        `auto_login_expiry` varchar(4) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `limited_devices` varchar(3) COLLATE utf8_unicode_ci DEFAULT '0' COMMENT '0: Unlimited',
+        `created_at` timestamp NULL DEFAULT NULL,
+        `updated_at` timestamp NULL DEFAULT NULL,
+        `notes` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+        `change_url_filter` tinyint(1) DEFAULT NULL,
+        `url_filter_type` int(2) DEFAULT NULL,
+        `url_filter_state` tinyint(1) DEFAULT NULL,
+        PRIMARY KEY (`id`)
+        ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=4 ;");
+        
+        DB::statement("INSERT INTO $dbName.area_groups (`id`, `name`, `is_active`, `as_system`, `radius_type`, `url_redirect`, `url_redirect_Interval`, `session_time`, `port_limit`, `idle_timeout`, `quota_limit_upload`, `quota_limit_download`, `quota_limit_total`, `speed_limit`, `renew`, `if_downgrade_speed`, `end_speed`, `network_id`, `auto_login`, `auto_login_expiry`, `limited_devices`, `created_at`, `updated_at`, `notes`, `change_url_filter`, `url_filter_type`, `url_filter_state`) VALUES
+        (1, 'Default', 1, 0, 'mikrotik', '', '', '', '1', '', '0', '0', '524288000', '32k/512k 128k/2048k 28k/480k 30', '1', '1', '16K/256K', 2, 1, '0', '0', '2017-02-04 20:08:39', '2017-02-09 20:10:14', '', NULL, NULL, NULL),
+        (2, 'Adminstrators', 1, 0, 'mikrotik', '', '', '', '1', '', '0', '0', '0', '256k/2048k 1024k/16384k 110k/1800k 30', '1', '0', '', 2, 0, NULL, '0', '2017-02-04 20:11:41', '2017-02-04 20:14:12', '', NULL, NULL, NULL),
+        (3, 'Vip', 1, 0, 'mikrotik', '', '', '', '1', '', '0', '0', '0', '256k/2048k 1024k/16384k 110k/1800k 30', '1', '0', NULL, 2, 0, NULL, '0', '2017-02-04 20:14:33', '2017-02-04 20:14:33', '', NULL, NULL, NULL);
+        ");
+
+
+        DB::statement("CREATE TABLE $dbName.branches (
+        `id` int(11) NOT NULL AUTO_INCREMENT,
+        `advanced_script` text,
+        `advanced_script_state` tinyint(1) DEFAULT '0',
+        `change_advanced_script_state` tinyint(1) DEFAULT '0',
+        `adult_state` tinyint(1) DEFAULT '0',
+        `change_adult_state` tinyint(1) DEFAULT '0',
+        `network_id` int(11) NOT NULL,
+        `name` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+        `state` tinyint(1) NOT NULL,
+        `address` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+        `phone` varchar(255) NOT NULL,
+        `username` varchar(255) NOT NULL,
+        `password` varchar(255) NOT NULL,
+        `Radiussecret` varchar(255) NOT NULL,
+        `ip` varchar(255) NOT NULL,
+        `url` varchar(100) DEFAULT NULL,
+        `APIport` varchar(255) NOT NULL,
+        `Radiusport` varchar(255) NOT NULL,
+        `guestlogin` tinyint(1) NOT NULL DEFAULT '0',
+        `autocmac` tinyint(1) NOT NULL DEFAULT '0',
+        `monthly_quota` varchar(255) DEFAULT NULL,
+        `start_quota` int(10) DEFAULT '1',
+        `notes` varchar(255) NOT NULL,
+        `device_mac` varchar(50) DEFAULT NULL,
+        `serial` varchar(50) DEFAULT NULL,
+        `created_at` datetime NOT NULL,
+        `updated_at` datetime NOT NULL,
+        `last_check` datetime DEFAULT NULL,
+        `cpu` varchar(5) DEFAULT NULL,
+        `uptime` varchar(20) DEFAULT NULL,
+        `ram` varchar(15) DEFAULT NULL,
+        `boardname` varchar(50) DEFAULT NULL,
+        `reset` tinyint(1) DEFAULT '0',
+        `reboot` tinyint(1) DEFAULT '0',
+        `connection_type` varchar(5) DEFAULT NULL COMMENT '1=ADSL, 2=PPP, 3=vodafone4G 4=etisalat4G, 5=orange4G',
+        `backup_connection_type` varchar(5) DEFAULT NULL COMMENT '1=ADSL, 2=PPP, 3=vodafone4G 4=etisalat4G, 5=orange4G',
+        `adsl_user` varchar(50) DEFAULT NULL,
+        `adsl_pass` varchar(50) DEFAULT NULL,
+        `wireless_state` tinyint(1) DEFAULT '0',
+        `wireless_name` varchar(100) DEFAULT NULL,
+        `wireless_pass` varchar(100) DEFAULT NULL,
+        `private_wireless_state` tinyint(1) DEFAULT '0',
+        `private_wireless_name` varchar(100) DEFAULT NULL,
+        `private_wireless_pass` varchar(100) DEFAULT NULL,
+        `private_wireless_ip` varchar(100) DEFAULT NULL,
+        `hacking_protection` tinyint(1) DEFAULT '0',
+        `load_balance_state` tinyint(1) DEFAULT '0',
+        `load_balance_type` varchar(2) DEFAULT NULL COMMENT '1=PCC, 2=NTH',
+        `users_log_history_state` tinyint(4) DEFAULT '0',
+        `users_log_history_type` int(1) DEFAULT NULL COMMENT '1=websites, 2=detailed IP of outgoing requests, 3=detailed IP of inbound requests, 4=detailed IP of inbound and outgoing requests, 5=websites+detailed IP of outgoing requests',
+        `change_connection_type` tinyint(1) DEFAULT '0',
+        `change_adsl_user` tinyint(1) DEFAULT '0',
+        `change_adsl_pass` tinyint(1) DEFAULT '0',
+        `change_wireless_state` tinyint(1) DEFAULT '0',
+        `change_wireless_name` tinyint(1) DEFAULT '0',
+        `change_wireless_pass` tinyint(1) DEFAULT '0',
+        `change_private_wireless_state` tinyint(1) DEFAULT '0',
+        `change_private_wireless_name` tinyint(1) DEFAULT '0',
+        `change_private_wireless_pass` tinyint(1) DEFAULT '0',
+        `change_private_wireless_ip` tinyint(1) DEFAULT '0',
+        `change_hacking_protection` tinyint(1) DEFAULT '0',
+        `change_load_balance_state` tinyint(1) DEFAULT '0',
+        `change_load_balance_type` tinyint(1) DEFAULT '0',
+        `change_username_or_password` tinyint(1) DEFAULT '0',
+        `change_state` tinyint(1) DEFAULT '0',
+        `backup_connection_state` tinyint(1) DEFAULT '0',
+        `change_backup_connection_state` tinyint(1) DEFAULT '0',
+        `change_backup_connection_type` tinyint(1) DEFAULT '0',
+        `change_users_log_history_state` tinyint(4) DEFAULT '0',
+        `change_users_log_history_type` tinyint(4) DEFAULT '0',
+        PRIMARY KEY (`id`)
+        ) ENGINE=MyISAM  DEFAULT CHARSET=latin1 AUTO_INCREMENT=2 ;");
+        DB::statement("INSERT INTO $dbName.branches (`id`, `advanced_script`, `advanced_script_state`, `change_advanced_script_state`, `adult_state`, `change_adult_state`, `network_id`, `name`, `state`, `address`, `phone`, `username`, `password`, `Radiussecret`, `ip`, `url`, `APIport`, `Radiusport`, `guestlogin`, `autocmac`, `monthly_quota`, `start_quota`, `notes`, `device_mac`, `serial`, `created_at`, `updated_at`, `last_check`, `cpu`, `uptime`, `ram`, `boardname`, `reset`, `reboot`, `connection_type`, `backup_connection_type`, `adsl_user`, `adsl_pass`, `wireless_state`, `wireless_name`, `wireless_pass`, `private_wireless_state`, `private_wireless_name`, `private_wireless_pass`, `private_wireless_ip`, `hacking_protection`, `load_balance_state`, `load_balance_type`, `users_log_history_state`, `users_log_history_type`, `change_connection_type`, `change_adsl_user`, `change_adsl_pass`, `change_wireless_state`, `change_wireless_name`, `change_wireless_pass`, `change_private_wireless_state`, `change_private_wireless_name`, `change_private_wireless_pass`, `change_private_wireless_ip`, `change_hacking_protection`, `change_load_balance_state`, `change_load_balance_type`, `change_username_or_password`, `change_state`, `backup_connection_state`, `change_backup_connection_state`, `change_backup_connection_type`, `change_users_log_history_state`, `change_users_log_history_type`) VALUES
+        (1, '', 0, 1, 0, 0, 2, 'default', 1, '', '', 'admin', 'admin', 'microsystem', '', NULL, '8728', '3799', 0, 1, '500', 1, '', '', '', '0000-00-00 00:00:00', '2017-04-08 21:36:46', '2017-05-03 11:47:28', '0', '11w5d19:16:16', '1MB', 'x86', 0, 0, '3', NULL, NULL, NULL, 1, 'Microsystem', '', 0, 'Microsystem VIP', '', '10.10.10.1', 0, NULL, NULL, 0, 2, 0, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, 0, 0, 0, NULL, NULL, 0, 0);
+        ");
+
+        DB::statement("CREATE TABLE $dbName.campaigns (
+        `id` int(11) NOT NULL AUTO_INCREMENT,
+        `campaign_name` varchar(255) DEFAULT NULL,
+        `ad_name` varchar(255) DEFAULT NULL,
+        `description` varchar(255) DEFAULT NULL,
+        `text` varchar(255) DEFAULT NULL,
+        `type` varchar(255) DEFAULT NULL,
+        `state` tinyint(4) DEFAULT NULL,
+        `startdate` date DEFAULT NULL,
+        `enddate` date DEFAULT NULL,
+        `background_pic` varchar(255) DEFAULT NULL,
+        `url` varchar(255) DEFAULT NULL,
+        `ios_url` varchar(255) DEFAULT NULL,
+        `android_url` varchar(255) DEFAULT NULL,
+        `video_url` varchar(255) DEFAULT NULL,
+        `offer_title` varchar(255) DEFAULT NULL,
+        `offer_desc` varchar(255) DEFAULT NULL,
+        `offer_expire_date` datetime DEFAULT NULL,
+        `offer_limit` varchar(255) DEFAULT NULL,
+        `offer_terms` varchar(255) DEFAULT NULL,
+        `offer_sendmail` tinyint(4) DEFAULT NULL,
+        `offer_sendsms` tinyint(4) DEFAULT NULL,
+        `offer_email_message` text,
+        `offer_sms_message` text CHARACTER SET utf8 COLLATE utf8_unicode_ci,
+        `social_offer` tinyint(4) DEFAULT '0',
+        `social_network` tinyint(4) DEFAULT '0',
+        `social_post_type` tinyint(4) DEFAULT NULL,
+        `invite_friends` int(11) DEFAULT NULL,
+        `day_parting` tinyint(4) DEFAULT '0',
+        `days` varchar(255) DEFAULT NULL,
+        `survey_type` varchar(255) DEFAULT NULL,
+        `question` varchar(255) DEFAULT NULL,
+        `views_count` int(11) DEFAULT '0',
+        `clicks_count` int(11) DEFAULT '0',
+        `delay` int(11) DEFAULT NULL,
+        `open_profile` int(11) DEFAULT NULL,
+        `day_parting_start` time DEFAULT NULL,
+        `day_parting_end` time DEFAULT NULL,
+        `loyalty_visits` int(11) DEFAULT NULL,
+        `loyalty_method` int(11) DEFAULT NULL COMMENT '1. count visits in current week 	2. count visits in current Month 	3. count visits in current Year 	4. count visits during last week 	5. count visits during last month 	6. count visits during last 2 months 	7. count visits during last 3 months 	8. count visits during last 4 months 	9. count visits during last 5 months 	10. count visits during last 6 months 	11. count visits during last year 	12. count visits whole the period',
+        `loyalty_offer` tinyint(1) DEFAULT NULL,
+        `loyalty_exact_visit_count` tinyint(1) DEFAULT NULL,
+        `network_id` varchar(255) DEFAULT NULL,
+        `group_id` varchar(255) DEFAULT NULL,
+        `branch_id` varchar(255) DEFAULT NULL,
+        `created_at` timestamp NULL DEFAULT NULL,
+        `updated_at` timestamp NULL DEFAULT NULL,
+        PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;");
+
+
+        DB::statement("CREATE TABLE $dbName.campaign_statistics (
+        `id` int(11) NOT NULL AUTO_INCREMENT,
+        `campaign_id` int(11) DEFAULT NULL,
+        `type` varchar(255) COLLATE utf8_bin DEFAULT NULL,
+        `u_id` int(11) DEFAULT NULL,
+        `a_id` int(11) DEFAULT NULL,
+        `state` tinyint(4) DEFAULT NULL,
+        `offer_code` varchar(255) COLLATE utf8_bin DEFAULT NULL,
+        `created_at` timestamp NULL DEFAULT NULL,
+        `updated_at` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+        `referral_code` varchar(255) COLLATE utf8_bin DEFAULT NULL,
+        PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin AUTO_INCREMENT=1 ;
+        ");
+        DB::statement("CREATE TABLE $dbName.cards (
+        `id` int(11) NOT NULL AUTO_INCREMENT,
+        `number` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
+        `price` int(11) NOT NULL,
+        `start_pay_date` date DEFAULT NULL,
+        `end_pay_date` date DEFAULT NULL,
+        `date_of_charging` date DEFAULT NULL,
+        `state` int(11) NOT NULL,
+        `u_id` int(11) DEFAULT NULL,
+        PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
+        ");
+
+        DB::statement("CREATE TABLE $dbName.history (
+        `id` int(11) NOT NULL AUTO_INCREMENT,
+        `add_date` date DEFAULT NULL,
+        `add_time` time DEFAULT NULL,
+        `type1` varchar(100) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL COMMENT 'Implemented in: hotspot; mikrotikapi; mikrotik_radius; agilecrm; salesforce; sms_provider',
+        `type2` varchar(100) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL COMMENT 'who is he: admin; user; auto',
+        `operation` varchar(100) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL COMMENT 'types:user_charge_package; autoSMSuserChargePackage, admin_login,Charged card,Wrong charged card,Generate cards, reseller_payment, reseller_credit, reseller_cards_package, paypal_charge_card, reseller_charge_package, custom_landing_page, send_sms_confirmation',
+        `details` varchar(500) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+        `notes` varchar(500) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+        `u_id` varchar(100) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+        `a_id` varchar(100) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+        `reseller_id` int(11) DEFAULT NULL,
+        `package_id` int(11) DEFAULT NULL,
+        `package_type` int(11) DEFAULT NULL COMMENT '1 Monthly, 2 Validity, 3 Time, 4 Bandwidth',
+        `package_period` varchar(30) DEFAULT NULL,
+        `package_expiration_date` date DEFAULT NULL,
+        `package_price` int(11) DEFAULT NULL,
+        `branch_id` int(11) DEFAULT NULL,
+        `group_id` int(11) DEFAULT NULL,
+        `network_id` int(11) DEFAULT NULL,
+        PRIMARY KEY (`id`)
+        ) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;");
+        DB::statement("CREATE TABLE $dbName.load_balancing (
+        `id` int(11) NOT NULL AUTO_INCREMENT,
+        `branch_id` int(11) DEFAULT NULL,
+        `ip` int(11) DEFAULT NULL,
+        `gateway` int(11) DEFAULT NULL,
+        `speed` int(11) DEFAULT NULL,
+        `type` int(11) DEFAULT NULL COMMENT '0: direct, 1 bridge, 2 Vodafone modem, 3 Etisalat modem, 4 Orange modem',
+        `user` varchar(100) DEFAULT NULL,
+        `pass` varchar(100) DEFAULT NULL,
+        PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;");
+        DB::statement("CREATE TABLE $dbName.media (
+        `id` int(11) NOT NULL AUTO_INCREMENT,
+        `title` varchar(255) COLLATE utf8_bin DEFAULT NULL,
+        `description` varchar(255) COLLATE utf8_bin DEFAULT NULL,
+        `template` varchar(255) COLLATE utf8_bin DEFAULT NULL,
+        `file` varchar(255) COLLATE utf8_bin DEFAULT NULL,
+        `type` varchar(255) COLLATE utf8_bin DEFAULT NULL,
+        `campaign_id` int(11) DEFAULT NULL,
+        `state` int(11) DEFAULT NULL,
+        `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        `updated_at` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+        PRIMARY KEY (`id`)
+        ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_bin AUTO_INCREMENT=46 ;
+        ");
+
+        DB::statement("INSERT INTO $dbName.media (`id`, `title`, `description`, `template`, `file`, `type`, `campaign_id`, `state`, `created_at`, `updated_at`) VALUES
+        (37, ' Citystars', ' Welcome to Citystars', 'template1', 'intercontinental-cairo-4042091000-2x1.jpg', NULL, NULL, 1, '2017-02-04 20:07:05', '2017-02-04 20:07:05'),
+        (38, 'Citystars', ' ', 'template1', 'home_1_1279531742.jpeg', NULL, NULL, 1, '2017-02-04 20:07:16', '2017-02-04 20:07:16'),
+        (42, NULL, NULL, NULL, '2017-04-08-00:47:19-intercontinental-cairo-4042091000-2x1.jpg', 'campaigns', 1, NULL, '2017-04-08 00:47:19', '0000-00-00 00:00:00'),
+        (43, NULL, NULL, 'default', '2017-04-19-23:30:43-2017-04-07-23-32-57-home_1_1279531742.jpeg', 'custom-landing', NULL, NULL, '2017-04-19 23:30:43', '0000-00-00 00:00:00'),
+        (44, NULL, NULL, 'default', '2017-04-19-23:30:43-home_ic__lounge__1_w_2140065229.jpeg', 'custom-landing', NULL, NULL, '2017-04-19 23:30:43', '0000-00-00 00:00:00'),
+        (45, NULL, NULL, 'default', '2017-04-19-23:30:43-City-Stars-Shopping-Center-Tour1.jpg', 'custom-landing', NULL, NULL, '2017-04-19 23:30:43', '0000-00-00 00:00:00');
+        ");
+        DB::statement("CREATE TABLE $dbName.messages (
+        `id` int(11) NOT NULL AUTO_INCREMENT,
+        `u_id` int(11) NOT NULL,
+        `admin_id` int(11) DEFAULT NULL,
+        `name` varchar(255) NOT NULL,
+        `email` varchar(255) NOT NULL,
+        `phone` varchar(255) NOT NULL,
+        `subject` varchar(255) DEFAULT NULL,
+        `message` varchar(255) NOT NULL,
+        `state` tinyint(4) NOT NULL COMMENT '0 user sent but admin not read it; 1 admin readed',
+        `parent_id` int(11) DEFAULT NULL,
+        `deleted` int(11) DEFAULT '0',
+        `updated_at` datetime NOT NULL,
+        `created_at` datetime NOT NULL,
+        PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+        ");
+        DB::statement("CREATE TABLE $dbName.migrations (
+        `migration` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+        `batch` int(11) NOT NULL
+        ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+        ");
+        DB::statement("CREATE TABLE $dbName.networks (
+        `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+        `name` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+        `mode` tinyint(1) NOT NULL DEFAULT '0',
+        `c_type` tinyint(1) NOT NULL DEFAULT '0',
+        `state` tinyint(1) NOT NULL DEFAULT '0',
+        `r_type` tinyint(1) NOT NULL DEFAULT '0' COMMENT '0 Direct; 1 Waiting Admin; 2 Waiting SMS',
+        `commercial` int(1) DEFAULT '0' COMMENT '0 commercial, 1 free, 2 free + commercial',
+        `notes` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `system_name` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `company_system` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `show_package_monthly` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `show_package_validity` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `show_package_sms` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `show_package_bandwidth` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `show_package_period` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `show_package_offer` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `register_state` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `charge_account_state` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `charge_visa_state` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `user_tracking_account` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `sms_service_state` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `change_pass_state` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `update_profile_state` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `update_user_region_status` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `system_control_status` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `system_control_message` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `trial_period` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `back_to_trial` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `stop_user_type` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `stop_user_profile_id` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `autoDisableUsersIfNotDisabled` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `personal_number` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `mobile_card_pay` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `mobile_card_history` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        `updated_at` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+        PRIMARY KEY (`id`)
+        ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=3 ;
+        ");
+        DB::statement("INSERT INTO $dbName.networks (`id`, `name`, `mode`, `c_type`, `state`, `r_type`, `commercial`, `notes`, `system_name`, `company_system`, `show_package_monthly`, `show_package_validity`, `show_package_sms`, `show_package_bandwidth`, `show_package_period`, `show_package_offer`, `register_state`, `charge_account_state`, `charge_visa_state`, `user_tracking_account`, `sms_service_state`, `change_pass_state`, `update_profile_state`, `update_user_region_status`, `system_control_status`, `system_control_message`, `trial_period`, `back_to_trial`, `stop_user_type`, `stop_user_profile_id`, `autoDisableUsersIfNotDisabled`, `personal_number`, `mobile_card_pay`, `mobile_card_history`, `created_at`, `updated_at`) VALUES
+        (2, 'dafault', 0, 1, 1, 2, 1, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '1', NULL, NULL, NULL, NULL, '0', '0', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2017-05-03 11:51:57', '2017-04-11 15:45:49');
+        ");
+        DB::statement("CREATE TABLE $dbName.packages (
+        `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+        `state` tinyint(1) NOT NULL,
+        `name` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+        `type` int(11) NOT NULL COMMENT '1 Monthly, 2 Validity, 3 Time, 4 Bandwidth',
+        `price` int(11) NOT NULL,
+        `period` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `offer` int(1) NOT NULL,
+        `time_package_expiry` int(11) DEFAULT '0' COMMENT 'filled if package type time, contains days',
+        `network_id` int(11) NOT NULL,
+        `group_id` int(11) DEFAULT NULL,
+        `notes` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+        `created_at` timestamp NULL DEFAULT NULL,
+        `updated_at` timestamp NULL DEFAULT NULL,
+        PRIMARY KEY (`id`),
+        KEY `notes` (`notes`)
+        ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
+        ");
+        DB::statement("CREATE TABLE $dbName.password_resets (
+        `email` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+        `token` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+        `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        KEY `password_resets_email_index` (`email`),
+        KEY `password_resets_token_index` (`token`)
+        ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+        ");
+        DB::statement("CREATE TABLE $dbName.radacct (
+        `radacctid` bigint(21) NOT NULL AUTO_INCREMENT,
+        `acctsessionid` varchar(64) NOT NULL DEFAULT '',
+        `acctuniqueid` varchar(32) NOT NULL DEFAULT '',
+        `username` varchar(64) NOT NULL DEFAULT '',
+        `groupname` varchar(64) NOT NULL DEFAULT '',
+        `realm` varchar(64) DEFAULT '',
+        `nasipaddress` varchar(15) NOT NULL DEFAULT '',
+        `nasportid` varchar(15) DEFAULT NULL,
+        `nasporttype` varchar(32) DEFAULT NULL,
+        `acctstarttime` timestamp NULL DEFAULT NULL,
+        `acctstoptime` datetime DEFAULT NULL,
+        `acctsessiontime` int(12) DEFAULT NULL,
+        `acctauthentic` varchar(32) DEFAULT NULL,
+        `connectinfo_start` varchar(50) DEFAULT NULL,
+        `connectinfo_stop` varchar(50) DEFAULT NULL,
+        `acctinputoctets` bigint(20) DEFAULT NULL,
+        `acctoutputoctets` bigint(20) DEFAULT NULL,
+        `calledstationid` varchar(50) NOT NULL DEFAULT '',
+        `callingstationid` varchar(50) NOT NULL DEFAULT '',
+        `acctterminatecause` varchar(32) NOT NULL DEFAULT '',
+        `servicetype` varchar(32) DEFAULT NULL,
+        `framedprotocol` varchar(32) DEFAULT NULL,
+        `framedipaddress` varchar(15) NOT NULL DEFAULT '',
+        `acctstartdelay` int(12) DEFAULT NULL,
+        `acctstopdelay` int(12) DEFAULT NULL,
+        `xascendsessionsvrkey` varchar(10) DEFAULT NULL,
+        `u_id` int(11) NOT NULL,
+        `dates` date DEFAULT NULL,
+        `branch_id` int(11) DEFAULT NULL,
+        `group_id` int(11) DEFAULT NULL,
+        `network_id` int(11) DEFAULT NULL,
+        `total_quota` varchar(15) DEFAULT NULL,
+        PRIMARY KEY (`radacctid`),
+        KEY `username` (`username`),
+        KEY `framedipaddress` (`framedipaddress`),
+        KEY `acctsessionid` (`acctsessionid`),
+        KEY `acctsessiontime` (`acctsessiontime`),
+        KEY `acctuniqueid` (`acctuniqueid`),
+        KEY `acctstarttime` (`acctstarttime`),
+        KEY `acctstoptime` (`acctstoptime`),
+        KEY `nasipaddress` (`nasipaddress`),
+        KEY `u_id` (`u_id`)
+        ) ENGINE=MyISAM DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+        ");
+        
+       
+       
+        DB::statement("CREATE TABLE $dbName.radcheck (
+        `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+        `username` varchar(64) NOT NULL DEFAULT '',
+        `attribute` varchar(64) NOT NULL DEFAULT '',
+        `op` char(2) NOT NULL DEFAULT '==',
+        `value` varchar(253) NOT NULL DEFAULT '',
+        `mac` varchar(50) DEFAULT NULL,
+        PRIMARY KEY (`id`),
+        KEY `username` (`username`(32))
+        ) ENGINE=MyISAM DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+        ");
+        DB::statement("CREATE TABLE $dbName.radgroupcheck (
+        `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+        `groupname` varchar(64) NOT NULL DEFAULT '',
+        `attribute` varchar(64) NOT NULL DEFAULT '',
+        `op` char(2) NOT NULL DEFAULT '==',
+        `value` varchar(253) NOT NULL DEFAULT '',
+        PRIMARY KEY (`id`),
+        KEY `groupname` (`groupname`(32))
+        ) ENGINE=MyISAM DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+        ");
+        DB::statement("CREATE TABLE $dbName.radgroupreply (
+        `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+        `groupname` varchar(64) NOT NULL DEFAULT '',
+        `attribute` varchar(64) NOT NULL DEFAULT '',
+        `op` char(2) NOT NULL DEFAULT '=',
+        `value` varchar(253) NOT NULL DEFAULT '',
+        PRIMARY KEY (`id`),
+        KEY `groupname` (`groupname`(32))
+        ) ENGINE=MyISAM DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+        ");
+        DB::statement("CREATE TABLE $dbName.radius_attributes (
+        `id` int(11) NOT NULL AUTO_INCREMENT,
+        `radius_type` varchar(50) DEFAULT NULL,
+        `attribute_type` varchar(50) DEFAULT NULL,
+        `attribute` varchar(50) DEFAULT NULL,
+        PRIMARY KEY (`id`)
+        ) ENGINE=MyISAM  DEFAULT CHARSET=latin1 COMMENT='Please no not delete any record from this table';
+        ");
+
+        DB::statement("INSERT INTO $dbName.radius_attributes (`id`, `radius_type`, `attribute_type`, `attribute`) VALUES
+        (1, 'mikrotik', 'url_redirect', 'Mikrotik-Advertise-URL'),
+        (2, 'mikrotik', 'url_redirect_Interval', 'Mikrotik-Advertise-Interval'),
+        (3, 'mikrotik', 'session_time', 'Session-Timeout'),
+        (4, 'mikrotik', 'port_limit', 'Port-Limit'),
+        (5, 'mikrotik', 'idle_timeout', 'Idle-Timeout'),
+        (6, 'mikrotik', 'quota_limit_upload', 'Mikrotik-Recv-Limit'),
+        (7, 'mikrotik', 'quota_limit_download', 'Mikrotik-Xmit-Limit'),
+        (8, 'mikrotik', 'speed_limit', 'Mikrotik-Rate-Limit'),
+        (9, 'mikrotik', 'quota_limit_total', 'Mikrotik-Total-Limit');");
+
+        DB::statement("CREATE TABLE $dbName.radpostauth (
+        `id` int(11) NOT NULL AUTO_INCREMENT,
+        `username` varchar(64) NOT NULL DEFAULT '',
+        `pass` varchar(64) NOT NULL DEFAULT '',
+        `reply` varchar(32) NOT NULL DEFAULT '',
+        `authdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY (`id`)
+        ) ENGINE=MyISAM DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+        ");
+        DB::statement("CREATE TABLE $dbName.radreply (
+        `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+        `username` varchar(64) NOT NULL DEFAULT '',
+        `attribute` varchar(64) NOT NULL DEFAULT '',
+        `op` char(2) NOT NULL DEFAULT '=',
+        `value` varchar(253) NOT NULL DEFAULT '',
+        PRIMARY KEY (`id`),
+        KEY `username` (`username`(32))
+        ) ENGINE=MyISAM DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;");
+
+        DB::statement("CREATE TABLE $dbName.radusergroup (
+        `username` varchar(64) NOT NULL DEFAULT '',
+        `groupname` varchar(64) NOT NULL DEFAULT '',
+        `priority` int(11) NOT NULL DEFAULT '1',
+        KEY `username` (`username`(32))
+        ) ENGINE=MyISAM DEFAULT CHARSET=latin1;");
+
+        DB::statement("CREATE TABLE $dbName.search_result (
+        `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+        `title` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+        `link` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+        `created` date NOT NULL,
+        `created_at` timestamp NULL DEFAULT NULL,
+        `updated_at` timestamp NULL DEFAULT NULL,
+        PRIMARY KEY (`id`)
+        ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;");
+
+        DB::statement("CREATE TABLE $dbName.sessions (
+        `id` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+        `user_id` int(11) DEFAULT NULL,
+        `ip_address` varchar(45) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `user_agent` text COLLATE utf8_unicode_ci,
+        `payload` text COLLATE utf8_unicode_ci NOT NULL,
+        `last_activity` int(11) NOT NULL,
+        UNIQUE KEY `sessions_id_unique` (`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;");
+
+        DB::statement("CREATE TABLE $dbName.settings (
+        `id` int(11) NOT NULL AUTO_INCREMENT,
+        `type` varchar(255) NOT NULL,
+        `value` text NOT NULL,
+        `state` varchar(255) NOT NULL,
+        PRIMARY KEY (`id`)
+        ) ENGINE=MyISAM  DEFAULT CHARSET=latin1 ;");
+
+        DB::statement("INSERT INTO $dbName.settings (`id`, `type`, `value`, `state`) VALUES
+        (1, 'app_name', 'Default', ''),
+        (2, 'description', 'Default', ''),
+        (3, 'address', 'Default', ''),
+        (4, 'email', 'Default@Default.com', ''),
+        (5, 'phone', 'Default', ''),
+        (6, 'country', 'Egypt', ''),
+        (7, 'logo', 'City-Stars-Properties-og.png', ''),
+        (8, 'facebook_client_id', '', ''),
+        (9, 'facebook_client_secret', '', ''),
+        (10, 'google_client_id', '', ''),
+        (11, 'google_client_secret', '', ''),
+        (12, 'twitter_client_id', '', ''),
+        (13, 'twitter_client_secret', '', ''),
+        (14, 'systemID', 'radacct', ''),
+        (15, 'SMSProvider', '6', ''),
+        (16, 'SMSProviderusername', '', ''),
+        (17, 'SMSProviderpassword', '', ''),
+        (18, 'SMSProvidersendername', 'Microsystem', ''),
+        (19, 'linkedin_client_id', '', ''),
+        (20, 'linkedin_client_secret', '', ''),
+        (21, 'agile_rest_api', '', '0'),
+        (22, 'agile_domain_name', 'microsystem', ''),
+        (23, 'agile_admin_email', 'admin@microsystem.com.eg', ''),
+        (24, 'push_api', 'AIzaSyCZwiSJg5N0i-iYBsM4CHycz4dY4ZY3BPI', '1'),
+        (25, 'agile_send_comtacts', '', '1'),
+        (26, 'agile_receive_contacts', '', '1'),
+        (27, 'agile_send_login_score', '', '1'),
+        (28, 'alwaysOpenPasswordLoginInUserCP', '', ''),
+        (29, 'SMSstateUserChargePackage', '', '1'),
+        (30, 'SMSUserLang', 'en', ''),
+        (31, 'currency', '$', ''),
+        (32, 'limit_users', '0', ''),
+        (33, 'limit_networks', '0', ''),
+        (34, 'limit_branches', '0', ''),
+        (35, 'limit_groups', '0', ''),
+        (36, 'limit_packages', '0', ''),
+        (37, 'limit_cards', '0', ''),
+        (38, 'statistics12', 'Whole period', ''),
+        (39, 'statistics1', 'This Month', ''),
+        (40, 'statistics23', 'Whole period', ''),
+        (41, 'template', 'default', ''),
+        (51, 'customer_id', '1', ''),
+        (52, 'dashboard_type', 'internetManagement', '2'),
+        (57, 'Accountkitappid', '', '0'),
+        (55, 'dashboard_type', 'branchid', '5'),
+        (56, 'dashboard_type', 'internetManagement', '1'),
+        (58, 'Accountkitappsecret', '', ''),
+        (59, 'landing', 'default', ''),
+        (62, 'marketing_enable', '1', '1'),
+        (63, 'commercial_enable', '1', '1'),
+        (64, 'getUserName', '', '0'),
+        (65, 'getGender', '', '0'),
+        (66, 'getUserName', '', '0'),
+        (67, 'getGender', '', '0'),
+        (68, 'getNetwork', '', '0'),
+        (69, 'getEmail', '', '0'),
+        (70, 'getName', '', '1'),
+        (71, 'signupDefault', '', '0');");
+
+        DB::statement("CREATE TABLE $dbName.survey (
+        `id` int(11) NOT NULL AUTO_INCREMENT,
+        `campaign_id` int(11) DEFAULT NULL,
+        `u_id` int(11) DEFAULT NULL,
+        `options` varchar(255) COLLATE utf8_bin DEFAULT NULL,
+        `created_at` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+        `updated_at` timestamp NULL DEFAULT NULL,
+        PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin AUTO_INCREMENT=1 ;");
+
+        DB::statement("CREATE TABLE $dbName.SystemEvents (
+        `ID` int(10) unsigned NOT NULL AUTO_INCREMENT,
+        `ReceivedAt` datetime DEFAULT NULL,
+        `Message` text,
+        `SysLogTag` varchar(60) DEFAULT NULL,
+        `u_id` int(11) DEFAULT NULL,
+        `radacctid` int(11) DEFAULT NULL,
+        PRIMARY KEY (`ID`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;");
+
+/*
+        DB::statement("
+        DELIMITER //
+        CREATE TRIGGER $dbName.ip_filter BEFORE INSERT ON $dbName.SystemEvents
+        FOR EACH ROW BEGIN
+        IF NEW.SysLogTag='IP' then 
+        SET @mac = NULL;
+        SET @uid = NULL;
+        SET @radacctid = NULL;
+        SELECT SUBSTRING_INDEX(SUBSTRING_INDEX(NEW.Message,'src-mac ',-1),', ',1) into @mac;
+        select `u_id`,`radacctid`  into @uid,@radacctid from `radacct` where `callingstationid`=@mac order by `radacctid` desc limit 1;
+        #insert into `test` (mac,u_id) values (@mac,@uid);
+        set NEW.u_id=@uid;
+        set NEW.radacctid=@radacctid;
+        ELSE
+        select `u_id`,`radacctid`  into @uid,@radacctid from `radacct` where `framedipaddress`=NEW.SysLogTag order by `radacctid` desc limit 1;
+        set NEW.u_id=@uid;
+        set NEW.radacctid=@radacctid;
+        END IF;
+        END
+        //
+        DELIMITER ;
+        ");
+       */
+
+        DB::statement("CREATE TABLE $dbName.url_filter (
+        `id` int(11) NOT NULL AUTO_INCREMENT,
+        `group_id` int(11) NOT NULL,
+        `url` varchar(100) DEFAULT NULL,
+        PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;");
+
+        DB::statement("CREATE TABLE $dbName.users (
+        `u_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+        `Registration_type` tinyint(5) DEFAULT NULL,
+        `u_state` tinyint(4) DEFAULT '1',
+        `suspend` tinyint(4) DEFAULT '0',
+        `u_name` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `u_uname` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
+        `u_password` varchar(20) COLLATE utf8_unicode_ci NOT NULL,
+        `u_phone` text COLLATE utf8_unicode_ci,
+        `u_email` text COLLATE utf8_unicode_ci,
+        `u_country` text COLLATE utf8_unicode_ci,
+        `u_address` varchar(150) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `u_gender` tinyint(1) DEFAULT '2',
+        `u_lang` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `u_mac` varchar(500) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `credit` int(11) DEFAULT NULL,
+        `sms_credit` int(11) DEFAULT NULL,
+        `notes` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `branch_id` int(11) DEFAULT NULL,
+        `network_id` int(11) DEFAULT NULL,
+        `group_id` int(11) DEFAULT NULL,
+        `Selfrules` tinyint(1) DEFAULT NULL,
+        `agilecrm_id` varchar(20) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `facebook_id` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `twitter_id` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `twitter_pic` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `google_id` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `google_pic` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `linkedin_id` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `linkedin_pic` text COLLATE utf8_unicode_ci,
+        `token` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `deviceToken` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `sms_code` varchar(10) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `u_card_date_of_charging` date DEFAULT NULL,
+        `monthly_package_id` int(11) DEFAULT NULL,
+        `monthly_package_start` datetime DEFAULT NULL,
+        `monthly_package_expiry` date DEFAULT NULL,
+        `validity_package_id` int(11) DEFAULT NULL,
+        `validity_package_start` datetime DEFAULT NULL,
+        `validity_package_expiry` date DEFAULT NULL,
+        `time_package_id` int(11) DEFAULT NULL,
+        `time_package_start` datetime DEFAULT NULL,
+        `time_package_expiry` date DEFAULT NULL,
+        `bandwidth_package_id` int(11) DEFAULT NULL,
+        `bandwidth_package_start` datetime DEFAULT NULL,
+        `bandwidth_package_expiry` date DEFAULT NULL,
+        `last_login_manual` datetime DEFAULT NULL,
+        `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        `updated_at` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+        PRIMARY KEY (`u_id`)
+        ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
+        ");
+
+        DB::statement("CREATE TABLE $dbName.visitors (
+        `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+        `ip` varchar(32) COLLATE utf8_unicode_ci NOT NULL,
+        `agent` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
+        `type` varchar(50) COLLATE utf8_unicode_ci NOT NULL DEFAULT '0',
+        `browser` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+        `os` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+        `devicename` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+        `lang` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+        `created_at` timestamp NULL DEFAULT NULL,
+        `updated_at` timestamp NULL DEFAULT NULL,
+        PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
+        ");
+        
+        DB::statement("CREATE ALGORITHM=UNDEFINED DEFINER=root@localhost SQL SECURITY DEFINER VIEW $dbName.branch_count AS select $dbName.branches.id AS id,count($dbName.branches.name) AS b_name,$dbName.branches.name AS name,$dbName.branches.network_id AS network_id from ($dbName.branches join $dbName.users on(($dbName.branches.id = $dbName.users.branch_id))) group by $dbName.branches.id;");
+
+        DB::statement("CREATE ALGORITHM=UNDEFINED DEFINER=root@localhost SQL SECURITY DEFINER VIEW $dbName.branch_network AS select $dbName.branches.id AS id,$dbName.branches.network_id AS network_id,$dbName.branches.name AS name,$dbName.branches.state AS state,$dbName.branches.phone AS phone,$dbName.branches.address AS address,$dbName.branches.username AS username,$dbName.branches.Radiussecret AS Radiussecret,$dbName.branches.password AS password,$dbName.branches.ip AS ip,$dbName.branches.APIport AS APIport,$dbName.branches.Radiusport AS Radiusport,$dbName.branches.guestlogin AS guestlogin,$dbName.branches.autocmac AS autocmac,$dbName.branches.notes AS notes,$dbName.networks.name AS networkname,$dbName.branches.last_check AS last_check,$dbName.branches.cpu AS cpu,$dbName.branches.uptime AS uptime,$dbName.branches.ram AS ram,$dbName.branches.boardname AS boardname from ($dbName.branches join $dbName.networks on(($dbName.branches.network_id = $dbName.networks.id)));");
+
+        DB::statement("CREATE ALGORITHM=UNDEFINED DEFINER=root@localhost SQL SECURITY DEFINER VIEW $dbName.campaigns_statistics_days AS select (substring_index($dbName.history.add_date,'-',2) collate utf8_unicode_ci) AS month,(substring_index($dbName.history.add_date,'-',-(1)) collate utf8_unicode_ci) AS day,$dbName.history.details AS campaign_id,$dbName.history.operation AS operation,$dbName.history.add_date AS add_date,$dbName.history.notes AS notes,$dbName.history.type2 AS survey_id from $dbName.history where ($dbName.history.notes = 'campaigns');");
+
+        DB::statement("CREATE ALGORITHM=UNDEFINED DEFINER=root@localhost SQL SECURITY DEFINER VIEW $dbName.campaigns_statistics_months AS select substring_index($dbName.history.add_date,'-',2) AS month,$dbName.history.details AS campaign_id from $dbName.history where ($dbName.history.notes = 'campaigns') group by substring_index($dbName.history.add_date,'-',2),$dbName.history.details;");
+
+        DB::statement("CREATE ALGORITHM=UNDEFINED DEFINER=root@localhost SQL SECURITY DEFINER VIEW $dbName.campaigns_statistics_reach AS select $dbName.campaign_statistics.id AS id,$dbName.campaign_statistics.campaign_id AS campaign_id,$dbName.campaign_statistics.type AS type,$dbName.campaign_statistics.u_id AS u_id,(substring_index($dbName.campaign_statistics.created_at,'-',2) collate utf8_bin) AS month,(substring_index(substring_index($dbName.campaign_statistics.created_at,'-',-(1)),' ',1) collate utf8_bin) AS day,count(substring_index($dbName.campaign_statistics.created_at,'-',2)) AS days from $dbName.campaign_statistics where ($dbName.campaign_statistics.type = 'reach') group by $dbName.campaign_statistics.id;");
+
+        DB::statement("CREATE ALGORITHM=UNDEFINED DEFINER=root@localhost SQL SECURITY DEFINER VIEW $dbName.country_count AS select $dbName.users.u_id AS id,count($dbName.users.u_country) AS count,$dbName.users.u_country AS country from $dbName.users group by $dbName.users.u_country;");
+
+        DB::statement("CREATE ALGORITHM=UNDEFINED DEFINER=root@localhost SQL SECURITY DEFINER VIEW $dbName.gender AS select count($dbName.users.u_gender) AS count_g,$dbName.users.u_gender AS u_gender from $dbName.users group by $dbName.users.u_gender;");
+
+        DB::statement("CREATE ALGORITHM=UNDEFINED DEFINER=root@localhost SQL SECURITY DEFINER VIEW $dbName.groups_count AS select $dbName.area_groups.id AS id,$dbName.area_groups.name AS name,count($dbName.area_groups.name) AS count_g,$dbName.area_groups.as_system AS as_system from ($dbName.area_groups join $dbName.users on(($dbName.area_groups.id = $dbName.users.group_id))) where ($dbName.area_groups.as_system = 0) group by $dbName.area_groups.id;");
+
+        DB::statement("CREATE ALGORITHM=UNDEFINED DEFINER=root@localhost SQL SECURITY DEFINER VIEW $dbName.groups_network AS select $dbName.area_groups.id AS id,$dbName.area_groups.name AS name,$dbName.area_groups.is_active AS is_active,$dbName.area_groups.as_system AS as_system,$dbName.area_groups.radius_type AS radius_type,$dbName.area_groups.url_redirect AS url_redirect,$dbName.area_groups.url_redirect_Interval AS url_redirect_Interval,$dbName.area_groups.session_time AS session_time,$dbName.area_groups.port_limit AS port_limit,$dbName.area_groups.idle_timeout AS idle_timeout,$dbName.area_groups.quota_limit_upload AS quota_limit_upload,$dbName.area_groups.quota_limit_download AS quota_limit_download,$dbName.area_groups.quota_limit_total AS quota_limit_total,$dbName.area_groups.speed_limit AS speed_limit,$dbName.area_groups.renew AS renew,$dbName.area_groups.if_downgrade_speed AS if_downgrade_speed,$dbName.area_groups.end_speed AS end_speed,$dbName.area_groups.network_id AS network_id,$dbName.area_groups.created_at AS created_at,$dbName.area_groups.updated_at AS updated_at,$dbName.area_groups.notes AS notes,$dbName.networks.name AS n_name from ($dbName.area_groups join $dbName.networks on(($dbName.area_groups.network_id = $dbName.networks.id)));");
+
+        DB::statement("CREATE ALGORITHM=UNDEFINED DEFINER=root@localhost SQL SECURITY DEFINER VIEW $dbName.radacct_active_users AS select $dbName.users.u_name AS u_name,$dbName.area_groups.name AS groupname,$dbName.radacct.radacctid AS radacctid,$dbName.radacct.acctsessionid AS acctsessionid,$dbName.radacct.acctuniqueid AS acctuniqueid,$dbName.radacct.username AS username,$dbName.radacct.acctstarttime AS acctstarttime,$dbName.radacct.acctstoptime AS acctstoptime,$dbName.radacct.acctsessiontime AS acctsessiontime,$dbName.radacct.acctinputoctets AS acctinputoctets,$dbName.radacct.acctoutputoctets AS acctoutputoctets,$dbName.radacct.callingstationid AS callingstationid,$dbName.radacct.framedipaddress AS framedipaddress,$dbName.radacct.u_id AS u_id,$dbName.radacct.branch_id AS branch_id,$dbName.radacct.group_id AS group_id,$dbName.radacct.network_id AS network_id,$dbName.radacct.total_quota AS total_quota,$dbName.area_groups.speed_limit AS speed_limit,$dbName.area_groups.end_speed AS end_speed,$dbName.branches.name AS branch_name from ((($dbName.users join $dbName.radacct on(($dbName.radacct.u_id = $dbName.users.u_id))) join $dbName.area_groups on(($dbName.area_groups.id = $dbName.users.group_id))) join $dbName.branches on(($dbName.radacct.branch_id = $dbName.branches.id))) where (isnull($dbName.radacct.acctstoptime) and ($dbName.radacct.acctstarttime is not null)) group by $dbName.radacct.radacctid;");
+
+        DB::statement("CREATE ALGORITHM=UNDEFINED DEFINER=root@localhost SQL SECURITY DEFINER VIEW $dbName.radacct_branch_days AS select $dbName.radacct.radacctid AS radacctid,$dbName.radacct.acctstarttime AS acctstarttime,$dbName.radacct.acctstoptime AS acctstoptime,sum($dbName.radacct.acctsessiontime) AS acctsessiontime,sum($dbName.radacct.acctinputoctets) AS acctinputoctets,sum($dbName.radacct.acctoutputoctets) AS acctoutputoctets,sum(($dbName.radacct.acctoutputoctets + $dbName.radacct.acctinputoctets)) AS total,$dbName.radacct.u_id AS u_id,$dbName.radacct.dates AS dates,$dbName.radacct.branch_id AS branch_id,(substring_index($dbName.radacct.dates,'-',2) collate utf8_unicode_ci) AS month,(substring_index($dbName.radacct.dates,'-',-(1)) collate utf8_unicode_ci) AS day from $dbName.radacct where ($dbName.radacct.dates is not null) group by $dbName.radacct.dates,$dbName.radacct.branch_id;");
+
+        DB::statement("CREATE ALGORITHM=UNDEFINED DEFINER=root@localhost SQL SECURITY DEFINER VIEW $dbName.radacct_branch_months AS select (substring_index($dbName.radacct.dates,'-',2) collate utf8_unicode_ci) AS month,sum($dbName.radacct.acctoutputoctets) AS acctoutputoctets,sum($dbName.radacct.acctinputoctets) AS acctinputoctets,sum($dbName.radacct.acctsessiontime) AS acctsessiontime,sum(($dbName.radacct.acctoutputoctets + $dbName.radacct.acctinputoctets)) AS total,$dbName.radacct.branch_id AS branch_id from $dbName.radacct where ($dbName.radacct.dates is not null) group by substring_index($dbName.radacct.dates,'-',2),$dbName.radacct.branch_id;");
+
+        DB::statement("CREATE ALGORITHM=UNDEFINED DEFINER=root@localhost SQL SECURITY DEFINER VIEW $dbName.radacct_branch_users AS select $dbName.radacct.radacctid AS radacctid,sum($dbName.radacct.acctsessiontime) AS acctsessiontime,sum($dbName.radacct.acctinputoctets) AS acctinputoctets,sum($dbName.radacct.acctoutputoctets) AS acctoutputoctets,sum(($dbName.radacct.acctoutputoctets + $dbName.radacct.acctinputoctets)) AS total,$dbName.radacct.u_id AS u_id,$dbName.radacct.dates AS dates,$dbName.radacct.branch_id AS branch_id,(substring_index($dbName.radacct.dates,'-',2) collate utf8_unicode_ci) AS month,(substring_index($dbName.radacct.dates,'-',-(1)) collate utf8_unicode_ci) AS day,count($dbName.radacct.u_id) AS online_users from $dbName.radacct where ($dbName.radacct.dates is not null) group by $dbName.radacct.dates,$dbName.radacct.u_id,$dbName.radacct.branch_id;");
+
+        DB::statement("CREATE ALGORITHM=UNDEFINED DEFINER=root@localhost SQL SECURITY DEFINER VIEW $dbName.radacct_group_days AS select $dbName.radacct.radacctid AS radacctid,$dbName.radacct.acctstarttime AS acctstarttime,$dbName.radacct.acctstoptime AS acctstoptime,sum($dbName.radacct.acctsessiontime) AS acctsessiontime,sum($dbName.radacct.acctinputoctets) AS acctinputoctets,sum($dbName.radacct.acctoutputoctets) AS acctoutputoctets,sum(($dbName.radacct.acctoutputoctets + $dbName.radacct.acctinputoctets)) AS total,$dbName.radacct.u_id AS u_id,$dbName.radacct.dates AS dates,$dbName.radacct.group_id AS group_id,(substring_index($dbName.radacct.dates,'-',2) collate utf8_unicode_ci) AS month,(substring_index($dbName.radacct.dates,'-',-(1)) collate utf8_unicode_ci) AS day from $dbName.radacct where ($dbName.radacct.dates is not null) group by $dbName.radacct.dates,$dbName.radacct.group_id;");
+
+        DB::statement("CREATE ALGORITHM=UNDEFINED DEFINER=root@localhost SQL SECURITY DEFINER VIEW $dbName.radacct_group_months AS select (substring_index($dbName.radacct.dates,'-',2) collate utf8_unicode_ci) AS month,sum($dbName.radacct.acctoutputoctets) AS acctoutputoctets,sum($dbName.radacct.acctinputoctets) AS acctinputoctets,sum($dbName.radacct.acctsessiontime) AS acctsessiontime,sum(($dbName.radacct.acctoutputoctets + $dbName.radacct.acctinputoctets)) AS total,$dbName.radacct.group_id AS group_id from $dbName.radacct where ($dbName.radacct.dates is not null) group by substring_index($dbName.radacct.dates,'-',2),$dbName.radacct.group_id;");
+
+        DB::statement("CREATE ALGORITHM=UNDEFINED DEFINER=root@localhost SQL SECURITY DEFINER VIEW $dbName.radacct_group_users AS select $dbName.radacct.radacctid AS radacctid,sum($dbName.radacct.acctsessiontime) AS acctsessiontime,sum($dbName.radacct.acctinputoctets) AS acctinputoctets,sum($dbName.radacct.acctoutputoctets) AS acctoutputoctets,sum(($dbName.radacct.acctoutputoctets + $dbName.radacct.acctinputoctets)) AS total,$dbName.radacct.u_id AS u_id,$dbName.radacct.dates AS dates,$dbName.radacct.group_id AS group_id,(substring_index($dbName.radacct.dates,'-',2) collate utf8_unicode_ci) AS month,(substring_index($dbName.radacct.dates,'-',-(1)) collate utf8_unicode_ci) AS day,count($dbName.radacct.u_id) AS online_users from $dbName.radacct where ($dbName.radacct.dates is not null) group by $dbName.radacct.dates,$dbName.radacct.u_id,$dbName.radacct.group_id;");
+
+        DB::statement("CREATE ALGORITHM=UNDEFINED DEFINER=root@localhost SQL SECURITY DEFINER VIEW $dbName.radacct_network_days AS select $dbName.radacct.radacctid AS radacctid,$dbName.radacct.acctstarttime AS acctstarttime,$dbName.radacct.acctstoptime AS acctstoptime,sum($dbName.radacct.acctsessiontime) AS acctsessiontime,sum($dbName.radacct.acctinputoctets) AS acctinputoctets,sum($dbName.radacct.acctoutputoctets) AS acctoutputoctets,sum(($dbName.radacct.acctoutputoctets + $dbName.radacct.acctinputoctets)) AS total,$dbName.radacct.u_id AS u_id,$dbName.radacct.dates AS dates,$dbName.radacct.network_id AS network_id,(substring_index($dbName.radacct.dates,'-',2) collate utf8_unicode_ci) AS month,(substring_index($dbName.radacct.dates,'-',-(1)) collate utf8_unicode_ci) AS day from $dbName.radacct where ($dbName.radacct.dates is not null) group by $dbName.radacct.dates,$dbName.radacct.network_id;");
+
+        DB::statement("CREATE ALGORITHM=UNDEFINED DEFINER=root@localhost SQL SECURITY DEFINER VIEW $dbName.radacct_network_months AS select (substring_index($dbName.radacct.dates,'-',2) collate utf8_unicode_ci) AS month,sum($dbName.radacct.acctoutputoctets) AS acctoutputoctets,sum($dbName.radacct.acctinputoctets) AS acctinputoctets,sum($dbName.radacct.acctsessiontime) AS acctsessiontime,sum(($dbName.radacct.acctoutputoctets + $dbName.radacct.acctinputoctets)) AS total,$dbName.radacct.network_id AS network_id from $dbName.radacct where ($dbName.radacct.dates is not null) group by substring_index($dbName.radacct.dates,'-',2),$dbName.radacct.network_id;");
+
+        DB::statement("CREATE ALGORITHM=UNDEFINED DEFINER=root@localhost SQL SECURITY DEFINER VIEW $dbName.radacct_network_users AS select $dbName.radacct.radacctid AS radacctid,sum($dbName.radacct.acctsessiontime) AS acctsessiontime,sum($dbName.radacct.acctinputoctets) AS acctinputoctets,sum($dbName.radacct.acctoutputoctets) AS acctoutputoctets,sum(($dbName.radacct.acctoutputoctets + $dbName.radacct.acctinputoctets)) AS total,$dbName.radacct.u_id AS u_id,$dbName.radacct.dates AS dates,$dbName.radacct.network_id AS network_id,(substring_index($dbName.radacct.dates,'-',2) collate utf8_unicode_ci) AS month,(substring_index($dbName.radacct.dates,'-',-(1)) collate utf8_unicode_ci) AS day,count($dbName.radacct.u_id) AS online_users from $dbName.radacct where ($dbName.radacct.dates is not null) group by $dbName.radacct.dates,$dbName.radacct.u_id,$dbName.radacct.network_id;");
+
+        DB::statement("CREATE ALGORITHM=UNDEFINED DEFINER=root@localhost SQL SECURITY DEFINER VIEW $dbName.register_confirm AS select count($dbName.users.Registration_type) AS count,$dbName.users.Registration_type AS Registration_type from $dbName.users group by $dbName.users.Registration_type;");
+
+        DB::statement("CREATE ALGORITHM=UNDEFINED DEFINER=root@localhost SQL SECURITY DEFINER VIEW $dbName.statues_count AS select count($dbName.users.u_state) AS count,$dbName.users.u_state AS u_state from $dbName.users group by $dbName.users.u_state;");
+
+        DB::statement("CREATE ALGORITHM=UNDEFINED DEFINER=root@localhost SQL SECURITY DEFINER VIEW $dbName.suspend_count AS select count($dbName.users.suspend) AS count,$dbName.users.suspend AS suspend from $dbName.users group by $dbName.users.suspend;");
+
+        DB::statement("CREATE ALGORITHM=UNDEFINED DEFINER=root@localhost SQL SECURITY DEFINER VIEW $dbName.users_radacct AS select (substring_index($dbName.radacct.dates,'-',2) collate utf8_unicode_ci) AS month,$dbName.radacct.radacctid AS radacctid,$dbName.radacct.u_id AS u_id,$dbName.radacct.dates AS dates,$dbName.users.u_name AS u_name,$dbName.users.u_uname AS u_uname,$dbName.users.u_card_date_of_charging AS u_card_date_of_charging,$dbName.users.u_phone AS u_phone,$dbName.users.u_address AS u_address,$dbName.users.u_password AS u_password,$dbName.users.credit AS credit,$dbName.users.u_gender AS u_gender,$dbName.users.notes AS notes,$dbName.users.branch_id AS branch_id,$dbName.users.created_at AS created_at,$dbName.users.updated_at AS updated_at,$dbName.users.u_email AS u_email,$dbName.users.u_mac AS u_mac,$dbName.users.suspend AS suspend,$dbName.users.u_state AS u_state,$dbName.users.u_country AS u_country,$dbName.users.group_id AS group_id,$dbName.radacct.acctstarttime AS acctstarttime,sum($dbName.radacct.acctinputoctets) AS acctinputoctets,sum($dbName.radacct.acctoutputoctets) AS acctoutputoctets,sum($dbName.radacct.acctsessiontime) AS acctsessiontime,count(radacct.radacctid) AS countseccions,$dbName.users.Registration_type AS Registration_type,$dbName.users.u_lang AS u_lang,$dbName.users.network_id AS network_id,$dbName.users.Selfrules AS Selfrules,$dbName.users.token AS token,$dbName.users.sms_credit AS sms_credit,$dbName.users.google_id AS google_id,$dbName.users.twitter_id AS twitter_id,$dbName.users.facebook_id AS facebook_id,$dbName.users.linkedin_id AS linkedin_id from ($dbName.radacct join $dbName.users on(($dbName.radacct.u_id = $dbName.users.u_id))) where ($dbName.radacct.dates is not null) group by $dbName.radacct.u_id,$dbName.radacct.dates order by $dbName.radacct.radacctid desc;");
+
+        DB::statement("CREATE ALGORITHM=UNDEFINED DEFINER=root@localhost SQL SECURITY DEFINER VIEW $dbName.user_active AS select $dbName.radacct.radacctid AS radacctid,$dbName.radacct.acctsessionid AS acctsessionid,$dbName.radacct.acctuniqueid AS acctuniqueid,$dbName.radacct.username AS username,$dbName.radacct.groupname AS groupname,$dbName.radacct.realm AS realm,$dbName.radacct.nasipaddress AS nasipaddress,$dbName.radacct.nasportid AS nasportid,$dbName.radacct.nasporttype AS nasporttype,$dbName.radacct.acctstarttime AS acctstarttime,$dbName.radacct.acctstoptime AS acctstoptime,$dbName.radacct.acctsessiontime AS acctsessiontime,$dbName.radacct.acctauthentic AS acctauthentic,$dbName.radacct.connectinfo_start AS connectinfo_start,$dbName.radacct.connectinfo_stop AS connectinfo_stop,$dbName.radacct.acctinputoctets AS acctinputoctets,$dbName.radacct.acctoutputoctets AS acctoutputoctets,$dbName.radacct.calledstationid AS calledstationid,$dbName.radacct.callingstationid AS callingstationid,$dbName.radacct.acctterminatecause AS acctterminatecause,$dbName.radacct.servicetype AS servicetype,$dbName.radacct.framedprotocol AS framedprotocol,$dbName.radacct.framedipaddress AS framedipaddress,$dbName.radacct.acctstartdelay AS acctstartdelay,$dbName.radacct.acctstopdelay AS acctstopdelay,$dbName.radacct.xascendsessionsvrkey AS xascendsessionsvrkey,$dbName.radacct.u_id AS u_id,$dbName.radacct.dates AS dates,$dbName.radacct.branch_id AS branch_id,$dbName.radacct.total_quota AS total_quota,$dbName.radacct.network_id AS network_id,$dbName.radacct.group_id AS group_id from $dbName.radacct where (isnull($dbName.radacct.acctstoptime) and ($dbName.radacct.acctstarttime is not null)) group by $dbName.radacct.radacctid;");
+
+        DB::statement("CREATE ALGORITHM=UNDEFINED DEFINER=root@localhost SQL SECURITY DEFINER VIEW $dbName.visited_sites AS select $dbName.radacct.u_id AS u_id,$dbName.SystemEvents.ReceivedAt AS ReceivedAt,$dbName.SystemEvents.Message AS Message,$dbName.radacct.framedipaddress AS framedipaddress,$dbName.radacct.branch_id AS branch_id,$dbName.radacct.group_id AS group_id,$dbName.radacct.network_id AS network_id,$dbName.radacct.acctstarttime AS acctstarttime,$dbName.radacct.acctstoptime AS acctstoptime,$dbName.radacct.username AS username,$dbName.SystemEvents.ID AS visit_id,$dbName.radacct.radacctid AS radacctid from ($dbName.SystemEvents join $dbName.radacct on(($dbName.SystemEvents.radacctid = $dbName.radacct.radacctid)));");
+
+        DB::statement("CREATE ALGORITHM=UNDEFINED DEFINER=root@localhost SQL SECURITY DEFINER VIEW $dbName.visited_sites_full AS select substring_index(substring_index(substring_index(substring_index($dbName.SystemEvents.Message,'proto ',-(1)),', ',-(2)),'->',1),':',1) AS src_ip,substring_index(substring_index(substring_index(substring_index($dbName.SystemEvents.Message,'proto ',-(1)),', ',-(2)),':',-(2)),'->',1) AS src_port,substring_index(substring_index(substring_index(substring_index($dbName.SystemEvents.Message,'->',-(1)),', ',1),', ',-(1)),':',1) AS dst_ip,substring_index(substring_index(substring_index(substring_index($dbName.SystemEvents.Message,'->',-(1)),', ',1),', ',-(1)),':',-(1)) AS dst_port,substring_index(substring_index($dbName.SystemEvents.Message,'in:',-(1)),' ',1) AS type,substring_index(substring_index($dbName.SystemEvents.Message,'proto ',-(1)),', ',1) AS protocol,substring_index($dbName.SystemEvents.Message,', len ',-(1)) AS length,$dbName.radacct.u_id AS u_id,$dbName.users.u_name AS name,$dbName.users.u_uname AS username,$dbName.users.u_phone AS mobile,$dbName.users.u_email AS mail,$dbName.users.u_country AS country,$dbName.users.u_gender AS gender,$dbName.SystemEvents.ReceivedAt AS ReceivedAt,$dbName.SystemEvents.Message AS Message,$dbName.radacct.framedipaddress AS framedipaddress,$dbName.radacct.branch_id AS branch_id,$dbName.radacct.group_id AS group_id,$dbName.radacct.network_id AS network_id,$dbName.radacct.acctstarttime AS acctstarttime,$dbName.radacct.acctstoptime AS acctstoptime,$dbName.radacct.username AS login_user,$dbName.SystemEvents.ID AS visit_id,$dbName.radacct.radacctid AS radacctid,$dbName.radacct.callingstationid AS callingstationid from (($dbName.SystemEvents join $dbName.radacct on(($dbName.SystemEvents.radacctid = $dbName.radacct.radacctid))) join $dbName.users on(($dbName.radacct.u_id = $dbName.users.u_id)));");
+
+
+
+
+        // domain DNS step
+        //return Redirect::back();
+        //return "ddddddddddd";
+        //return __DIR__;
+        // for add data into file
+        $file_path="/var/named/microsystem.cloud.db";
+        $data="\n$subdomain     14400   IN      A       13.81.62.85	; #subdomain $subdomain \n";
+        //$file=file_get_contents("$file_path","a+") or exit("Unable to open file!");
+		$file=fopen("$file_path","a+") or exit("Unable to open file!");
+		fwrite($file,$data);
+		fclose($file);
+
+
+                // stoped in 30.4.2018 bacause we dont need any update in httpd or restart httpd
+                // // Set domain directory in apachi step
+                // $apache_file_path="/usr/local/apache/conf.d/vhosts.conf";
+                // $apache_data="\n # vhost_start $fullDomain \n";
+                // $apache_data.="<VirtualHost $serverLocalIP:80> \n";
+                // $apache_data.="ServerName $fullDomain \n";
+                // $apache_data.="ServerAlias www.$fullDomain \n";
+                // $apache_data.="ServerAdmin support@microsystem.com.eg \n";
+                // $apache_data.='DocumentRoot /home/hotspot/public_html'." \n";
+                // $apache_data.="ScriptAlias /cgi-bin/ /home/hotspot/public_html/cgi-bin/ \n";
+                // $apache_data.="<IfModule mod_suexec.c> \n";
+                // $apache_data.="SuexecUserGroup hotspot hotspot \n";
+                // $apache_data.="</IfModule> \n";
+                // $apache_data.="<IfModule mod_suphp.c> \n";
+                // $apache_data.="suPHP_UserGroup hotspot hotspot \n";
+                // $apache_data.="</IfModule> \n";
+                // $apache_data.='<Directory "/home/hotspot/public_html">'." \n";
+                // $apache_data.="AllowOverride All \n";
+                // $apache_data.="</Directory> \n";
+                // $apache_data.="</VirtualHost> \n";
+                // $apache_data.="# vhost_end $fullDomain \n";
+                // $apache_file=fopen("$apache_file_path","a+") or exit("Unable to open file!");
+                // fwrite($apache_file,$apache_data);
+                // fclose($apache_file);
+
+
+        // insert record into customers
+        DB::table('customers')->insert(['url' => $fullDomain, 'database' => $subdomain, 'password'=> $password, 'state'=> '1', 'name'=> $name, 'mail'=> $mail]);
+
+        // insert record into CWP
+        DB::table('root_cwp.domains')->insert(['domain' => $fullDomain, 'user' => 'hotspot', 'path'=> '/home/hotspot/public_html', 'setup_time'=> $created_at]);
+
+        // restart httpd and named for DNS
+        // SSH::run([
+        //     'service named stop',
+        //     'service httpd stop',
+        // ]);.
+//         exec('service named status', $output);
+// print_r($output);  // to see the response to your command
+// die;
+
+// exec("sudo visudo service named stop apache ALL = NOPASSWD: ALL",$output);
+// return $output;
+
+// print_r($output);
+//         exec("service httpd stop");
+
+        $output = exec('sudo service named restart');
+        //return "<pre>$output</pre>";
+
+        return redirect('http://'.$fullDomain.'/admin');
+        // return $request->input('domain');
+    }
+
+
+}

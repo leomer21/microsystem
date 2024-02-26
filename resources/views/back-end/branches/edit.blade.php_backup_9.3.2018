@@ -1,0 +1,916 @@
+<h6 class="text-semibold"></h6>
+
+<div class="row">
+<form action="{{ url('edit_branch/'.$branch->id) }}" method="POST" id="edit" class="form-horizontal">
+{{ csrf_field() }}
+
+<!-- Accordion with right control button -->
+<div class="panel-group panel-group-control panel-group-control-right content-group-lg" id="edit-accordion-control-right">
+    <div class="panel panel-white">
+
+        <div class="panel-heading">
+            <h6 class="panel-title">
+                <a data-toggle="collapse" data-parent="#edit-accordion-control-right" href="#edit-accordion-control-right-group1">General</a>
+            </h6>
+        </div>
+        <div id="edit-accordion-control-right-group1" class="panel-collapse collapse in">
+            <div class="panel-body">
+                <div class="form-group col-lg-12">
+                    <label class="control-label col-lg-3">Branch Name</label>
+                    <div class="col-lg-8">
+                        <div class="form-group has-feedback has-feedback-left">
+                            <input name="name" type="text" class="form-control input-xlg" value="{!! old('name',$branch->name) !!}">
+                            <div class="form-control-feedback">
+                                <i class="icon-server"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group col-lg-12">
+                    <label class="control-label col-lg-3">Network Name</label>
+                    <div class="col-lg-9">
+                        <select class="select-fixed-single200" name="networkname">
+                        @foreach($networks as $network)
+                        <option value="{{ $network->id }}">{{ $network->name }}</option>
+                        @endforeach
+                        </select>
+                    </div>
+                </div>
+<!--
+                <div class="form-group col-lg-12">
+                    <label class="control-label col-lg-3">Branch state</label>
+                    <div class="col-lg-8">
+                        <select class="select-fixed-single200" name="state" value="{!! old('state',$branch->state) !!}">
+                        <option value="1">Active</option>
+                        <option value="0">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+-->
+                <div class="form-group col-lg-12">
+                    <label class="control-label col-lg-3">Address</label>
+                    <div class="col-lg-8">
+                        <div class="form-group has-feedback has-feedback-left">
+                            <input name="address" type="text" class="form-control input-xlg" value="{!! old('address',$branch->address) !!}">
+                            <div class="form-control-feedback">
+                                <i class="icon-home"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group col-lg-12">
+                    <label class="control-label col-lg-3">Phone</label>
+                    <div class="col-lg-8">
+                        <div class="form-group has-feedback has-feedback-left">
+                            <input name="phone" type="text" class="form-control input-xlg" placeholder="201000000000" value="{!! old('phone',$branch->phone) !!}">
+                            <div class="form-control-feedback">
+                                <i class="icon-mobile2"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group col-lg-12">
+                    <label class="control-label col-lg-3">Notes</label>
+                    <div class="col-lg-8">
+                        <textarea name="notes" type="text" rows="3" class="form-control input-xlg">{!! old('notes',$branch->notes) !!}</textarea>
+                    </div>
+                </div>
+
+                
+            </div>
+        </div>
+    </div>
+
+    <div class="panel panel-white">
+        <div class="panel-heading">
+            <h6 class="panel-title">
+                <a class="collapsed" data-toggle="collapse" data-parent="#accordion-control-right" href="#edit-accordion-control-right-group2">Basic settings</a>
+            </h6>
+        </div>
+        <div id="edit-accordion-control-right-group2" class="panel-collapse collapse">
+            <div class="panel-body">
+                <div class="form-group col-lg-12">
+                    <label class="control-label col-lg-3">Mikrotik Username</label>
+                    <div class="col-lg-8">
+                        <div class="form-group has-feedback has-feedback-left">
+                            <input name="username" type="text" class="form-control input-xlg" value="{!! old('username',$branch->username) !!}">
+                            <div class="form-control-feedback">
+                                <i class="icon-user"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group col-lg-12">
+                    <label class="control-label col-lg-3">Mikrotik Password</label>
+                    <div class="col-lg-8">
+                        <div class="form-group has-feedback has-feedback-left">
+                            <input name="password" type="password" class="form-control input-xlg" value="{!! old('password',$branch->password) !!}">
+                            <div class="form-control-feedback">
+                                <i class="icon-key"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group col-lg-12">
+                    <label class="control-label col-lg-3">Radius Secret</label>
+                    <div class="col-lg-8">
+                        <div class="form-group has-feedback has-feedback-left">
+                            <input name="Radiussecret" type="text" class="form-control input-xlg" value="microsystem" readonly>
+                            <div class="form-control-feedback">
+                                <i class="icon-key"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group col-lg-12">
+                    <label class="control-label col-lg-3">IP Address</label>
+                    <div class="col-lg-8">
+                        <div class="form-group has-feedback has-feedback-left">
+                            <input name="ip" type="text" class="form-control input-xlg" placeholder="000.000.000.000" value="{!! old('ip',$branch->ip) !!}">
+                            <div class="form-control-feedback">
+                                <i class="icon-link2"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group col-lg-12">
+                    <label class="control-label col-lg-3">Device Mac</label>
+                    <div class="col-lg-8">
+                        <div class="form-group has-feedback has-feedback-left">
+                            <input name="device_mac" type="text" class="form-control input-xlg" placeholder="00:00:00:00:00" value="{!! old('ip',$branch->device_mac) !!}">
+                            <div class="form-control-feedback">
+                                <i class="icon-link2"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group col-lg-12">
+                    <label class="control-label col-lg-3"> Serial</label>
+                    <div class="col-lg-8">
+                        <div class="form-group has-feedback has-feedback-left">
+                            <input name="serial" type="text" class="form-control input-xlg" placeholder="Mikrotik serial" value="{!! old('serial', $branch->serial) !!}">
+                            <div class="form-control-feedback">
+                                <i class="icon-barcode2"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group col-lg-12">
+                    <label class="control-label col-lg-3">API Port</label>
+                    <div class="col-lg-3">
+                        <div class="form-group has-feedback has-feedback-left">
+                            <input name="APIport" type="text" class="form-control input-xlg" value="{!! old('APIport',$branch->APIport) !!}">
+                            <div class="form-control-feedback">
+                                <i class="icon-lan"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <label class="control-label col-lg-2">Radius Port</label>
+                    <div class="col-lg-3">
+                        <div class="form-group has-feedback has-feedback-left">
+                            <input name="Radiusport" type="text" class="form-control input-xlg" value="{!! old('Radiusport',$branch->Radiusport) !!}">
+                            <div class="form-control-feedback">
+                                <i class="icon-lan"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group col-lg-12">
+                  <label class="control-label col-lg-3">Monthly Quota GB</label>
+                  <div class="col-lg-3">
+                    <div class="form-group has-feedback has-feedback-left">
+                      <input name="monthly_quota" type="text" class="form-control input-xlg" placeholder="100" value="{!! old('monthly_quota',$branch->monthly_quota) !!}">
+                      <div class="form-control-feedback">
+                        <i class="icon-cloud"></i>
+                      </div>
+                    </div>
+                  </div>
+                  <label class="control-label col-lg-2">Renew day</label>
+                  <div class="col-lg-3">
+                    <div class="form-group has-feedback has-feedback-left">
+                      <input name="start_quota" type="number" class="form-control input-xlg" max="31" min="1" value="{!! old('start_quota',$branch->start_quota) !!}">
+                      <div class="form-control-feedback">
+                        <i class="icon-sun3"></i>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+
+    <div class="panel panel-white">
+        <div class="panel-heading">
+            <h6 class="panel-title">
+                <a class="collapsed" data-toggle="collapse" data-parent="#accordion-control-right" href="#edit-accordion-control-right-group3">Internet Connection</a>
+            </h6>
+        </div>
+        <div id="edit-accordion-control-right-group3" class="panel-collapse collapse">
+            <div class="panel-body">
+
+                <div class="form-group col-lg-12">
+                    <label class="control-label col-lg-3">Connection type</label>
+                    <div class="col-lg-8">
+                        <select class="select-fixed-single" name="connection-type" id="edit-connection-type">
+                            <option @if($branch->connection_type == 1) selected @endif value="1">ADSL</option>
+                            <option @if($branch->connection_type == 2) selected @endif value="2">PPP</option>
+                            <option @if($branch->connection_type == 3) selected @endif value="3">Vodafone usb modem</option>
+                            <option @if($branch->connection_type == 4) selected @endif value="4">Etisalat usb modem</option>
+                            <option @if($branch->connection_type == 5) selected @endif value="5">Orange usb modem</option>
+                            <option @if($branch->connection_type == 6) selected @endif value="6">Load balancing</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group col-lg-12 edit-adsl-username" @if($branch->connection_type == 2) @else style="display: none;" @endif>
+                    <label class="control-label col-lg-4">ADSL Username</label>
+                    <div class="col-lg-6">
+                        <div class="form-group has-feedback has-feedback-left">
+                            <input name="adsl-username" type="text" class="form-control input-xlg" value="{{ $branch->adsl_user }}">
+                            <div class="form-control-feedback">
+                                <i class="icon-user"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group col-lg-12 edit-adsl-password" @if($branch->connection_type == 2) @else style="display: none;" @endif>
+                    <label class="control-label col-lg-4">ADSL Password</label>
+                    <div class="col-lg-6">
+                        <div class="form-group has-feedback has-feedback-left">
+                            <input name="adsl-password" type="password" class="form-control input-xlg" value="{{ $branch->adsl_pass }}">
+                            <div class="form-control-feedback">
+                                <i class="icon-key"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group col-lg-12 edit-table-bordered" @if($branch->connection_type == 6) @else style="display: none;" @endif>
+                    <div class="table-responsive">
+                        <div class="panel-body">
+                            <button type="button" name="add" id="edit-add_load" class="btn btn-success"><i class="icon-plus2"></i></button>
+                        </div>    
+                        <table class="table edit-table-bordered" data-toggle="context" data-target=".context-table" id="edit-dynamic_load">
+                            <thead> 
+                                <tr>
+                                    <th>IP/Gateway</th>
+                                    <th>Speed</th>
+                                    <!-- <th>Type</th> -->
+                                    <th class="text-center"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($load as $value)
+                                <tr>
+                                    <td>
+                                        <label class="control-label">IP</label>
+                                        <input name="load-ip[]" type="text" class="form-control input-xlg edit-load-ip" value="{{ $value->ip }}" style="width: 130px;" required>
+                                        <label class="control-label">Gateway</label>
+                                        <input name="load-gateway[]" type="text" class="form-control input-xlg edit-load-gateway" value="{{ $value->gateway }}" style="width: 130px;" required>
+                                    </td>
+                                    <td>
+                                        <select class="edit-select" name="load-speed[]" required>
+                                            <option @if($value->speed == 1) selected @endif value="1">1 M</option>
+                                            <option @if($value->speed == 2) selected @endif value="2">2 M</option>
+                                            <option @if($value->speed == 4) selected @endif value="4">4 M</option>
+                                            <option @if($value->speed == 8) selected @endif value="8">8 M</option>
+                                            <option @if($value->speed == 16) selected @endif value="16">16 M</option>
+                                            <option @if($value->speed == 32) selected @endif value="32">32 M</option>
+                                            <option @if($value->speed == 64) selected @endif value="64">64 M</option>
+                                        </select>
+                                    </td>
+                                    <input type='hidden' name='load-type[]' value='0'>
+                                    <!-- <td>                                        
+                                         <div class="form-group">
+                                            <select class="edit-select edit-land-type" name="load-type[]" required>
+                                                <option @if($value->type == 1) selected @endif value="0">Direct</option>
+                                                <option @if($value->type == 1) selected @endif value="1">Bridge</option>
+                                                <option @if($value->type == 2) selected @endif value="2">Vodafone modem</option>
+                                                <option @if($value->type == 3) selected @endif value="3">Etisalat modem</option>
+                                                <option @if($value->type == 4) selected @endif value="4">Orange modem</option>
+                                            </select>
+                                        </div> 
+                                        <div class="form-group load-username" style="display: none;">
+                                            <div class="form-group has-feedback has-feedback-left">
+                                                <input name="load-username" type="text" class="form-control input-xlg" style="width: 100px;" value="{{ $value->user }}">
+                                                <div class="form-control-feedback">
+                                                    <i class="icon-user"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group load-password" style="display: none;">
+                                            <div class="form-group has-feedback has-feedback-left">
+                                                <input name="load-password" type="password" class="form-control input-xlg" style="width: 100px;" value="{{ $value->pass }}">
+                                                <div class="form-control-feedback">
+                                                    <i class="icon-key"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td> -->
+
+                                    <td>
+                                        <button type="button" name="remove" class="btn btn-danger edit-btn_remove" onclick="_delete({{$value->id}}, {{$value->branch_id}})" ><i class="icon-minus2"></i></button>
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>  
+            </div>
+        </div>
+    </div>
+
+    <div class="panel panel-white">
+        <div class="panel-heading">
+            <h6 class="panel-title">
+                <a class="collapsed" data-toggle="collapse" data-parent="#accordion-control-right" href="#edit-accordion-control-right-group4">Backup connection</a>
+            </h6>
+        </div>
+        <div id="edit-accordion-control-right-group4" class="panel-collapse collapse">
+            <div class="panel-body">
+                 <div class="form-group col-lg-12">
+                    <label class="control-label col-lg-4">Backup Connection state</label>
+                    <div class="col-lg-6">
+                        <div class="checkbox checkbox-switch">
+                            <input id="edit-backup-connection-state" name="backup-connection-state" type="checkbox" class="switch" data-on-text="On" data-off-text="Off" data-on-color="primary" data-off-color="default" @if($branch->backup_connection_state == 1)  checked @endif >
+                        </div>
+                    </div>
+                </div>     
+                <div class="form-group col-lg-12 edit-backup-connection-type">
+                    <label class="control-label col-lg-4">Backup Connection type</label>
+                    <div class="col-lg-6">
+                        <select class="select-fixed-single" name="backup-connection-type" id="edit-backup-connection-type">
+                            <option @if($branch->backup_connection_type == 1) selected @endif value="1">ADSL</option>
+                            <!--<option value="2">PPP</option>-->
+                            <option @if($branch->backup_connection_type == 2) selected @endif value="2">Vodafone usb modem</option>
+                            <option @if($branch->backup_connection_type == 3) selected @endif value="3">Etisalat usb modem</option>
+                            <option @if($branch->backup_connection_type == 4) selected @endif value="4">Orange usb modem</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group col-lg-12 edit-backup-adsl-username" style="display: none;">
+                    <label class="control-label col-lg-4">ADSL Username</label>
+                    <div class="col-lg-6">
+                        <div class="form-group has-feedback has-feedback-left">
+                            <input name="backup-adsl-username" type="text" class="form-control input-xlg">
+                            <div class="form-control-feedback">
+                                <i class="icon-user"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group col-lg-12 edit-backup-adsl-password" style="display: none;">
+                    <label class="control-label col-lg-4">ADSL Password</label>
+                    <div class="col-lg-6">
+                        <div class="form-group has-feedback has-feedback-left">
+                            <input name="backup-adsl-password" type="password" class="form-control input-xlg">
+                            <div class="form-control-feedback">
+                                <i class="icon-key"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="panel panel-white">
+        <div class="panel-heading">
+            <h6 class="panel-title">
+                <a class="collapsed" data-toggle="collapse" data-parent="#accordion-control-right" href="#edit-accordion-control-right-group5">Wireless</a>
+            </h6>
+        </div>
+        <div id="edit-accordion-control-right-group5" class="panel-collapse collapse">
+            <div class="panel-body">
+                <div class="form-group col-lg-12">
+                    <label class="control-label col-lg-4">Wireless state</label>
+                    <div class="col-lg-6">
+                        <div class="checkbox checkbox-switch">
+                            <input id="edit-wireless-state" name="wireless-state" type="checkbox" class="switch" data-on-text="On" data-off-text="Off" data-on-color="primary" data-off-color="default" @if($branch->wireless_state == 1)  checked @endif>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group col-lg-12 edit-wireless-username" @if($branch->wireless_state == 1) @else style="display: none;" @endif>
+                    <label class="control-label col-lg-4">Wireless name</label>
+                    <div class="col-lg-6">
+                        <div class="form-group has-feedback has-feedback-left">
+                            <input name="wireless-username" type="text" class="form-control input-xlg" value="{{ $branch->wireless_name }}">
+                            <div class="form-control-feedback">
+                                <i class="icon-user"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group col-lg-12 edit-wireless-password" @if($branch->wireless_state == 1) @else style="display: none;" @endif>
+                    <label class="control-label col-lg-4">Wireless password</label>
+                    <div class="col-lg-6">
+                        <div class="form-group has-feedback has-feedback-left">
+                            <input name="wireless-password" type="password" class="form-control input-xlg" value="{{ $branch->wireless_pass }}">
+                            <span class="help-block">If you need wifi without password, leave password empty.</span>
+                            <span class="help-block">If you need to set wifi password make sure characters doesn't less than 8 characters.</span>
+                            <div class="form-control-feedback">
+                                <i class="icon-key"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel panel-white">
+        <div class="panel-heading">
+            <h6 class="panel-title">
+                <a class="collapsed" data-toggle="collapse" data-parent="#accordion-control-right" href="#edit-accordion-control-right-group6">Private wireless ( Isolated Wi-Fi without any control )</a>
+            </h6>
+        </div>
+        <div id="edit-accordion-control-right-group6" class="panel-collapse collapse">
+            <div class="panel-body">
+                <div class="form-group col-lg-12">
+                    <label class="control-label col-lg-4">Wireless state</label>
+                    <div class="col-lg-6">
+                        <div class="checkbox checkbox-switch">
+                            <input id="edit-private-wireless-state" name="private-wireless-state" type="checkbox" class="switch" data-on-text="On" data-off-text="Off" data-on-color="primary" data-off-color="default" @if($branch->private_wireless_state == 1)  checked @endif>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group col-lg-12 edit-private-wireless-username" @if($branch->private_wireless_state == 1) @else style="display: none;" @endif>
+                    <label class="control-label col-lg-4">Wireless name</label>
+                    <div class="col-lg-6">
+                        <div class="form-group has-feedback has-feedback-left">
+                            <input name="private-wireless-username" type="text" class="form-control input-xlg" value="{{ $branch->private_wireless_name }}">
+                            <div class="form-control-feedback">
+                                <i class="icon-user"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group col-lg-12 edit-private-wireless-password" @if($branch->private_wireless_state == 1) @else style="display: none;" @endif>
+                    <label class="control-label col-lg-4">Wireless password</label>
+                    <div class="col-lg-6">
+                        <div class="form-group has-feedback has-feedback-left">
+                            <input name="private-wireless-password" type="password" class="form-control input-xlg" value="{{ $branch->private_wireless_pass }}">
+                            <span class="help-block">If you need wifi without password, leave password empty.</span>
+                            <span class="help-block">If you need to set wifi password make sure characters doesn't less than 8 characters.</span>
+                            <div class="form-control-feedback">
+                                <i class="icon-key"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group col-lg-12 edit-private-wireless-ip" @if($branch->private_wireless_state == 1) @else style="display: none;" @endif>
+                    <label class="control-label col-lg-4">Wireless IP</label>
+                    <div class="col-lg-6">
+                        <div class="form-group has-feedback has-feedback-left">
+                            <input name="private-wireless-ip" type="text" class="form-control input-xlg" value="{{ $branch->private_wireless_ip }}" readonly>
+                            <div class="form-control-feedback">
+                                <i class="icon-link2"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="panel panel-white">
+        <div class="panel-heading">
+            <h6 class="panel-title">
+                <a class="collapsed" data-toggle="collapse" data-parent="#accordion-control-right" href="#edit-accordion-control-right-group7">Security</a>
+            </h6>
+        </div>
+        <div id="edit-accordion-control-right-group7" class="panel-collapse collapse">
+            <div class="panel-body">
+               <div class="form-group col-lg-12">
+                    <label class="control-label col-lg-4" data-popup="tooltip" title="This feature will disable network shareing between devices" data-placement="left">Hacking Protection</label>
+                    <div class="col-lg-6">
+                        <div class="checkbox checkbox-switch">
+                            <input name="security-state" type="checkbox" class="switch" data-on-text="On" data-off-text="Off" data-on-color="primary" data-off-color="default" @if($branch->hacking_protection == 1)  checked @endif>
+                        </div>
+                    </div>
+                </div> 
+
+                <div class="form-group col-lg-12">
+                    <label class="control-label col-lg-4" data-popup="tooltip" title="Will affect DNS for all users" data-placement="left">Adult Protection</label>
+                    <div class="col-lg-6">
+                        <div class="checkbox checkbox-switch">
+                            <input name="adult-state" type="checkbox" class="switch" data-on-text="On" data-off-text="Off" data-on-color="primary" data-off-color="default" @if($branch->adult_state  == 1)  checked @endif>
+                        </div>
+                    </div>
+                </div>      
+            </div>
+        </div>
+    </div>
+
+    <div class="panel panel-white">
+        <div class="panel-heading">
+            <h6 class="panel-title">
+                <a class="collapsed" data-toggle="collapse" data-parent="#accordion-control-right" href="#edit-accordion-control-right-group8">Advanced script</a>
+            </h6>
+        </div>
+        <div id="edit-accordion-control-right-group8" class="panel-collapse collapse">
+            <div class="panel-body">
+                <div class="form-group col-lg-12">
+                    <label class="control-label col-lg-4" data-popup="tooltip" title="Will affect DNS for all users" data-placement="left">Advanced script state</label>
+                    <div class="col-lg-6">
+                        <div class="checkbox checkbox-switch">
+                            <input name="advanced-script-state" id="edit-advanced-script-state" type="checkbox" class="switch" data-on-text="On" data-off-text="Off" data-on-color="primary" data-off-color="default" @if($branch->advanced_script_state  == 1)  checked @endif>
+                        </div>
+                    </div>
+                </div> 
+
+                <div class="form-group col-lg-12 edit-advanced-script" @if($branch->advanced_script_state  == 1) @else style="display: none;" @endif>
+                    <textarea id="edit-editor"> {{ $branch->advanced_script }}</textarea>
+                    <input type="hidden" name="edit-advanced-script">
+                </div> 
+
+
+
+            </div>
+        </div>
+    </div>
+
+    <div class="panel panel-white">
+        <div class="panel-heading">
+            <h6 class="panel-title">
+                <a class="collapsed" data-toggle="collapse" data-parent="#accordion-control-right" href="#accordion-control-right-group91">Cyber Defense Operations Center</a>
+            </h6>
+        </div>
+        <div id="accordion-control-right-group91" class="panel-collapse collapse">
+            <div class="panel-body">
+                <div class="form-group col-lg-12">
+                    <label class="control-label col-lg-4" data-popup="tooltip" title="" data-placement="left">Cyber tracking state</label>
+                    <div class="col-lg-6">
+                        <div class="checkbox checkbox-switch">
+                            <input name="log-history-state" id="edit-log-visited" type="checkbox" class="switch" data-on-text="On" data-off-text="Off" data-on-color="primary" data-off-color="default" @if($branch->users_log_history_state  == 1) checked @endif> 
+                        </div>
+                    </div>
+                </div> 
+
+                <div class="form-group col-lg-12 edit-log-visited" @if($branch->users_log_history_state  == 1) @else style="display: none;" @endif>
+                    <label class="control-label col-lg-4">Cyber tracking type</label>
+                    <div class="col-lg-6">
+                        <select class="select-fixed-single" name="log-history-type" id="backup-connection-type">
+                            <option @if($branch->users_log_history_type  == 1) selected @endif disabled value="1">Websites</option>
+                            <option @if($branch->users_log_history_type  == 2) selected @endif value="2">Detailed IP of outgoing requests</option>
+                            <option @if($branch->users_log_history_type  == 3) selected @endif disabled value="3">Detailed IP of inbound requests</option>
+                            <option @if($branch->users_log_history_type  == 4) selected @endif disabled value="4">Detailed IP of inbound and outgoing requests</option>
+                            <option @if($branch->users_log_history_type  == 5) selected @endif disabled value="5">All of the above</option>
+                        </select>
+                    </div>   
+                </div> 
+            </div>
+        </div>
+    </div>
+
+</div>
+<!-- /accordion with right control button -->
+
+</form>
+</div>
+	<script>
+
+        $('#edit-add_load').click(function () {
+            var code = '<tbody> <tr id="row">\n';
+                                                                
+                code += '<td>\n';
+                    code += '<label class="control-label">IP</label> \n';
+                    code += '<input name="load-ip[]" type="text" class="form-control input-xlg edit-load-ip" value="192.168.2.10" style="width: 130px;" required> \n';
+                    code += '<label class="control-label">Gateway</label> \n';
+                    code += '<input name="load-gateway[]" type="text" class="form-control input-xlg edit-load-gateway" value="192.168.2.1" style="width: 130px;" required> \n';
+                code += '</td>\n';
+
+                code += '<td>\n';
+                    code += '<select class="edit-select" name="load-speed[]" required>\n';
+                    code += '<option value="1">1 M</option>\n';
+                    code += '<option value="2">2 M</option>\n';
+                    code += '<option value="4">4 M</option>\n';
+                    code += '<option value="8">8 M</option>\n';
+                    code += '<option value="16">16 M</option>\n';
+                    code += '<option value="32">32 M</option>\n';
+                    code += '<option value="64">64 M</option>\n';
+                    code += '</select>\n';
+                code += '</td>\n';
+                code += '<input type="hidden" name="load-type[]" value="0">';
+                //code += '<td>\n';
+                    // code += '<select class="edit-select edit-land-type" name="load-type[]" required>\n';
+                    // code += '<option value="0">Direct</option>\n';
+                    // code += '<option value="1">Bridge</option>\n';
+                    // code += '<option value="2">Vodafone modem</option>\n';
+                    // code += '<option value="3">Etisalat modem</option>\n';
+                    // code += '<option value="4">Orange modem</option>\n';
+                    // code += '</select>\n';
+                //     code += '<div class="form-group">\n';
+                //     code += '<div class="form-group edit-load-username" style="display: none;">\n';
+                //     code += '<div class="form-group has-feedback has-feedback-left">\n';
+                //     code += '<input name="load-username[]" type="text" class="form-control input-xlg" style="width: 100px;">\n';
+                //     code += '<div class="form-control-feedback">\n';
+                //     code += '<i class="icon-user"></i>\n';
+                //     code += '</div>\n';
+                //     code += '</div>\n';
+                //     code += '</div>\n';
+                //     code += '</div>\n';
+
+                //     code += '<div class="form-group edit-load-password" style="display: none;">\n';
+                //     code += '<div class="form-group has-feedback has-feedback-left">\n';
+                //     code += '<input name="load-password[]" type="password" class="form-control input-xlg" style="width: 100px;">\n';
+                //     code += '<div class="form-control-feedback">\n';
+                //     code += '<i class="icon-key"></i>\n';
+                //     code += '</div>\n';
+                //     code += '</div>\n';
+                //     code += '</div>\n';
+                // code += '</td>\n';
+                
+                code += '<td>\n';
+                    code += '<button type="button" name="remove" class="btn btn-danger edit-btn_remove" ><i class="icon-minus2"></i></button>\n';
+                code += '</td>\n';
+                
+                code += '</tr> </tbody>';
+            $('#edit-dynamic_load').append(code);
+            $('.edit-select-fixed-single85').select2({
+                minimumResultsForSearch: Infinity,
+                width: 85
+            });
+        });
+
+        $(document).on('change', '.edit-land-type', function () {
+            var loadtype = $(this).val();
+
+            if(loadtype == 1){
+                $(this).parent().find('.edit-load-username').show();
+                $(this).parent().find('.edit-load-password').show();
+
+            }else{
+                $(this).parent().find('.edit-load-username').hide();
+                $(this).parent().find('.edit-load-password').hide();
+                
+            }
+        });
+
+        $(document).on('change', '.edit-load-ip', function () {
+            var aaaaa = $(this).val();
+            var ret = aaaaa.split(".");
+            var ip = ret[0] +'.' + ret[1] +'.'+ ret[2] + '.1';
+            
+            $(this).parent().find('.edit-load-gateway').val(ip);
+        });
+            
+        $(document).on('click', '.edit-btn_remove', function () {
+            $(this).parent().parent().remove();
+        });
+
+
+        function _delete($id, $branch_id){
+
+            console.log($id);
+            var that = this;
+
+               swal({
+                 title: "Are you sure?",
+                 text: "You will not be able to data again!",
+                 type: "warning",
+                 showCancelButton: true,
+                 confirmButtonColor: "#DD6B55",
+                 confirmButtonText: "Yes, delete it!",
+                 cancelButtonText: "No, cancel plx!",
+                 closeOnConfirm: false,
+                 closeOnCancel: false,
+                 showLoaderOnConfirm: true
+               },
+               function(isConfirm){
+
+                if (isConfirm) {
+                     
+                     $.ajax({
+                        url:'load-balancing-delete/'+ $id +'/' + $branch_id,
+                         success:function(data) {
+
+                             $(this).parent().parent().remove();
+                             swal("Deleted!", "Your data has been deleted.", "success");
+                         },
+                         error:function(){
+                             swal("Cancelled", "Your data is safe :)", "error");
+
+                         }
+                     });
+                } else {
+                     swal("Cancelled", "Your Cancelled :)", "success");
+                }
+            });
+        }
+
+       // Alert combination
+        /*$(document).on( 'click', '.edit-btn_remove', function () {
+            var that = this;
+            var table = $('.edit-table-bordered');
+
+               swal({
+                 title: "Are you sure?",
+                 text: "You will not be able to branch data again!",
+                 type: "warning",
+                 showCancelButton: true,
+                 confirmButtonColor: "#DD6B55",
+                 confirmButtonText: "Yes, delete it!",
+                 cancelButtonText: "No, cancel plx!",
+                 closeOnConfirm: false,
+                 closeOnCancel: false,
+                 showLoaderOnConfirm: true
+               },
+               function(isConfirm){
+
+                if (isConfirm) {
+                     var data = table.row( $(that).parents('tr') ).data();
+                     if(data  == null){
+                       data = table.row( $(that).parents('tr').prev() ).data();
+                     }
+                     
+                     console.log(data.id);
+
+                     $.ajax({
+                        url:'load-balancing-delete/'+ data.id,
+                         success:function(data) {
+
+                             table.row( $(that).parents('tr') ).remove().draw();
+                             swal("Deleted!", "Your branch data has been deleted.", "success");
+                         },
+                         error:function(){
+                             swal("Cancelled", "Your branch data is safe :)", "error");
+
+                         }
+                     });
+                } else {
+                     swal("Cancelled", "Your Cancelled :)", "success");
+                }
+            });
+        });*/
+
+
+        $('.edit-select-fixed-single805').select2({
+            minimumResultsForSearch: Infinity,
+            width: 85
+        });
+
+        $('.select-fixed-single').select2({
+            minimumResultsForSearch: Infinity,
+            width: 353
+        });
+        $('.select-fixed-single200').select2({
+          minimumResultsForSearch: Infinity,
+          width: 353
+           });
+        $('.select-fixed-single100').select2({
+               minimumResultsForSearch: Infinity,
+               width: 120
+           });
+        // Checkboxes
+           $(".styled").uniform({
+               radioClass: 'choice'
+           });
+        $('#Radiuscheck').on('click', function () {
+              if($(this).is(':checked')){
+                   $('#RadiusDiv').show();
+              }else{
+                  $('#RadiusDiv').hide();
+              }
+           });
+        $('#RadiusDiv').hide();
+
+
+           $('#Radiuschecks').on('click', function () {
+              if($(this).is(':checked')){
+                   $('#RadiusDiv2').show();
+              }else{
+                  $('#RadiusDiv2').hide();
+              }
+           });
+        $('#RadiusDiv2').hide();
+        $('.select-fixed-singles').select2({
+              minimumResultsForSearch: Infinity,
+              width: 75
+          });
+
+        $(".switch").bootstrapSwitch();
+        
+        $("#edit-connection-type").change(function(){
+            var connectiontype = $("#edit-connection-type option:selected").val();
+            if(connectiontype == 2){
+                $('.edit-adsl-username').show();
+                $('.edit-adsl-password').show();
+            }else{
+                $('.edit-adsl-username').hide();
+                $('.edit-adsl-password').hide();
+            }
+            if(connectiontype == 6){
+                $('.edit-table-bordered').show();
+            }else{
+                $('.edit-table-bordered').hide();
+            }
+        });
+
+        $(".edit-land-type").change(function(){
+            var loadtype = $(".land-type option:selected").val();
+            if(loadtype == 1){
+                $('.load-username').show();
+                $('.load-password').show();
+            }else{
+                $('.load-username').hide();
+                $('.load-password').hide();
+            }
+        });    
+
+        // $("#edit-backup-connection-type").change(function(){
+        //     var connectiontype = $("#edit-backup-connection-type option:selected").val();
+        //     if(connectiontype == 1){
+        //         $('.edit-backup-adsl-username').show();
+        //         $('.edit-backup-adsl-password').show();
+        //     }else{
+        //         $('.edit-backup-adsl-username').hide();
+        //         $('.edit-backup-adsl-password').hide();
+        //     }
+        // });
+
+        $('#edit-backup-connection-state').on('switchChange.bootstrapSwitch', function (event, state) {
+            if (state === true) {
+                $('.edit-backup-connection-type').show();
+                
+            } else {
+                $('.edit-backup-connection-type').hide();
+            }
+        });
+
+        $('#edit-wireless-state').on('switchChange.bootstrapSwitch', function (event, state) {
+            if (state === true) {
+                $('.edit-wireless-username').show();
+                $('.edit-wireless-password').show();
+                
+            } else {
+                $('.edit-wireless-username').hide();
+                $('.edit-wireless-password').hide();
+            }
+        });
+
+        $('#edit-private-wireless-state').on('switchChange.bootstrapSwitch', function (event, state) {
+            if (state === true) {
+                $('.edit-private-wireless-username').show();
+                $('.edit-private-wireless-password').show();
+                $('.edit-private-wireless-ip').show();
+                
+            } else {
+                $('.edit-private-wireless-username').hide();
+                $('.edit-private-wireless-password').hide();
+                $('.edit-private-wireless-ip').hide();            
+            }
+        });
+
+        $('#edit-advanced-script-state').on('switchChange.bootstrapSwitch', function (event, state) {
+            if (state === true) {
+                $('.edit-advanced-script').show();
+                
+            } else {
+                $('.edit-advanced-script').hide();
+            }
+        });
+
+        // Ruby editor
+        var edit_editor = ace.edit("edit-editor");
+        edit_editor.setTheme("ace/theme/monokai");
+        edit_editor.getSession().setMode("ace/mode/ruby");
+        edit_editor.setShowPrintMargin(false);
+        var input = $('input[name="edit-advanced-script"]');
+            edit_editor.getSession().on("change", function () {
+            input.val(edit_editor.getSession().getValue());
+        });
+
+
+        $('#edit-log-visited').on('switchChange.bootstrapSwitch', function (event, state) {
+            if (state === true) {
+                $('.edit-log-visited').show();
+                
+            } else {
+                $('.edit-log-visited').hide();
+            }
+        });    
+	</script>
+

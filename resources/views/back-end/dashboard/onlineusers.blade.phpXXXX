@@ -1,0 +1,16 @@
+@extends('..back-end.dashboard.charts')
+@section('var')
+
+@endsection
+@section('data')
+
+@endsection
+@section('options')
+
+@endsection
+@section('resize')
+
+@endsection
+@section('html')
+
+@endsection

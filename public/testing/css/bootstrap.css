@@ -1,0 +1,55 @@
+
+        /* For extremely small screen devices (595px and below) */
+        @media screen and (max-width: 595px) {
+          html {
+              background: url(images/bg1.jpg) no-repeat center center fixed;
+              -webkit-background-size: cover;
+              -moz-background-size: cover;
+              -o-background-size: cover;
+              background-size: cover;
+          }
+      }
+
+      /* Small screen devices (600px and above) */
+      /* @media screen and (min-width: 600px) {
+          html {
+              background: url(images/bg2.jpg) no-repeat center center fixed;
+              -webkit-background-size: cover;
+              -moz-background-size: cover;
+              -o-background-size: cover;
+              background-size: cover;
+          }
+      } */
+
+      /* Medium screen devices (768px and above) */
+      @media screen and (min-width: 595px) {
+          html {
+              background: url(images/bg3.jpg) no-repeat center center fixed;
+              -webkit-background-size: cover;
+              -moz-background-size: cover;
+              -o-background-size: cover;
+              background-size: cover;
+          }
+      }
+
+      /* Big screen devices (889px and above) */
+      @media screen and (min-width: 889px) {
+          html {
+              background: url(images/bg.jpg) no-repeat center center fixed;
+              -webkit-background-size: cover;
+              -moz-background-size: cover;
+              -o-background-size: cover;
+              background-size: cover;
+          }
+      }
+
+      /* Extra big screen devices (1200px and above) */
+      @media screen and (min-width: 1200px) {
+          html {
+              background: url(images/bg2.jpg) no-repeat center center fixed;
+              -webkit-background-size: cover;
+              -moz-background-size: cover;
+              -o-background-size: cover;
+              background-size: cover;
+          }
+      }

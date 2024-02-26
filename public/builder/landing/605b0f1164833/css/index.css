@@ -1,0 +1,13 @@
+#video-center-icon .bg {
+    background-image: url('../images/bg-2.jpg');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
+    opacity:0.8;
+}#header-form-slogan .bg {
+    background-image: url('../images/bg-15.jpg');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
+    opacity:0.5;
+}

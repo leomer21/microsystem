@@ -1,0 +1,20 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Visitors extends Model
+{
+    public function __construct(){
+        $database =  app('App\Http\Controllers\Controller')->configuration();
+        $this->table = $database.'.visitors';
+
+    }
+
+    //protected $table = "visitors";
+
+    protected $fillable = ['agent', 'ip', 'type'];
+
+    protected $dates = ['created_at', 'Date'];
+}

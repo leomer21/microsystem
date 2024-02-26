@@ -1,0 +1,64 @@
+<?php
+namespace App\Http\Controllers;
+
+use App\Http\Requests;
+use Illuminate\Http\Request;
+use App;
+use Hash;
+use Session;
+use Input;
+use Validator;
+use Auth;
+use Redirect;
+use DB;
+use Carbon\Carbon;
+use Mail;
+use DateTime;
+
+class CronCopyUsersRadacctViewToTable extends Controller
+{
+    // OrangeTP daily at 4AM to decrease dashboard loading time
+    public function cron(Request $request){
+        
+        date_default_timezone_set("Africa/Cairo");
+        $today = date("Y-m-d");
+        $today_time = date("g:i a");
+        $created_at = date("Y-m-d H:i:s");
+        $currentHour = date("H");
+        $today_full24=$created_at;
+
+        // for test only\
+        // $allCustomers=DB::table('customers')->where('state','1')->groupBy('database')->get();
+        $allCustomers=DB::table('customers')->where('database','demo')->orWhere('database','7starsmall')->where('state','1')->groupBy('database')->get();
+        foreach( $allCustomers as $Customer )
+        {
+            // copy content of `users_radacct` view to the `cron_users_radacct` table
+            // Purpose: generate totals of daily consumption daily for users to be used in dashboard and timeline
+            DB::statement( 'TRUNCATE TABLE `'.$Customer->database.'`.`cron_users_radacct`'.';');
+            $str = 'INSERT INTO `'.$Customer->database.'`.`cron_users_radacct`'.' (`month`, `radacctid`, `u_id`, `dates`, `u_name`, `u_uname`, `u_card_date_of_charging`,
+                `u_phone`, `u_address`, `u_password`, `credit`, `u_gender`, `notes`, `branch_id`, `created_at`, `updated_at`, `u_email`,
+                `u_mac`, `suspend`, `u_state`, `u_country`, `group_id`, `acctstarttime`, `acctinputoctets`, `acctoutputoctets`,
+                `acctsessiontime`, `countseccions`, `Registration_type`, `u_lang`, `network_id`, `Selfrules`, `token`, `sms_credit`,
+                `google_id`, `twitter_id`, `facebook_id`, `linkedin_id`)
+                SELECT `month`, `radacctid`, `u_id`, `dates`, `u_name`, `u_uname`, `u_card_date_of_charging`,
+                `u_phone`, `u_address`, `u_password`, `credit`, `u_gender`, `notes`, `branch_id`, `created_at`, `updated_at`, `u_email`,
+                `u_mac`, `suspend`, `u_state`, `u_country`, `group_id`, `acctstarttime`, `acctinputoctets`, `acctoutputoctets`,
+                `acctsessiontime`, `countseccions`, `Registration_type`, `u_lang`, `network_id`, `Selfrules`, `token`, `sms_credit`,
+                `google_id`, `twitter_id`, `facebook_id`, `linkedin_id`
+                FROM '.$Customer->database.'.users_radacct'.'';
+            DB::statement($str);
+            
+            // copy content of `users_monthly_consumption_view` view to the `users_monthly_consumption` table
+            // Purpose: generate totals of users_monthly_consumption daily for dashboard performance 
+            DB::statement( 'TRUNCATE TABLE `'.$Customer->database.'`.`users_monthly_consumption`'.';');
+            $str = 'INSERT INTO `'.$Customer->database.'`.`users_monthly_consumption`'.' (`u_id`, `u_name`, `branch_id`, `group_id`, `month`, `visits_per_day`, `acctinputoctets`,
+                `acctoutputoctets`, `acctsessiontime`, `user_created_at`, `last_update`)
+                SELECT `u_id`, `u_name`, `branch_id`, `group_id`, `month`, `visits_per_day`, `acctinputoctets`,
+                `acctoutputoctets`, `acctsessiontime`, `user_created_at`, NOW()
+                FROM `'.$Customer->database.'`.`users_monthly_consumption_view`'.'';
+            DB::statement($str);
+        }
+    echo "<center><h1>Done</h1></center>";
+	}
+	
+}

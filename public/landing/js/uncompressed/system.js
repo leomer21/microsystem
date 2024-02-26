@@ -1,0 +1,48 @@
+
+// Global Styles 
+// Theme    : AweLand - Responsive Coming Soon Template
+// Author   : Lantern Themes
+
+
+// ---------- Preloader ----------
+
+$(window).load(function() {
+$("#loader").fadeOut();
+$("#mask").delay(1000).fadeOut("slow");
+});
+
+//Adding fixed position to header
+$(document).scroll(function() {
+if ($(document).scrollTop() >= 10000) {
+  $('.navbar').addClass('navbar-fixed-top');
+  $('html').addClass('has-fixed-nav');
+} else {
+  $('.navbar').removeClass('navbar-fixed-top');
+  $('html').removeClass('has-fixed-nav');
+}
+});
+
+
+// ---------- Header Slideshow ----------
+
+$(function() {
+	$.vegas('slideshow', {
+
+        backgrounds:[
+			{ src:'landing/img/road1.jpg', fade:1000 },
+			//{ src:'landing/img/road2.jpg', fade:1000 },
+			//{ src:'landing/img/road3.jpg' },
+			//{ src:'landing/img/road4.jpg'}
+		]
+	})
+});
+
+
+// ---------- Flexslider Script ----------
+$('.flexslider').flexslider({
+	animation: "fade",
+	start: function(slider){
+	  $('body').removeClass('loading');
+	}
+});
+

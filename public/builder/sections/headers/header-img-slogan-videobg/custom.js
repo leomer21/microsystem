@@ -1,0 +1,11 @@
+//delete
+vide_run();
+//deleteend
+
+//------------------------------------------------------------------------	
+//                    MAGNIFIC POPUP(LIGHTBOX) SETTINGS
+//------------------------------------------------------------------------ 
+
+$('.single-iframe-popup').magnificPopup({
+    type: 'iframe'
+});

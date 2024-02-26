@@ -1,0 +1,40 @@
+Old Version : http://localhost/microsystem.com.eg/api/include/easy/inc_user_charge.php?u_id=68&name=asdfghjkliytrew&uname=asdfghjkliytrew&upassword=asdfghjkliytrew&action=charge&network_name=3m&network_code=network&hotspot_or_ppp=hotspot&package=42
+10.10.2016
+New Version : http://demo2.microsystem-eg.com/chargePackage/31488/1
+1st id : u_id
+2nd id : package_id
+in case user have package overwrite another package and need skip confirmation to overwrite add "/1" in final api url
+New Version : http://demo2.microsystem-eg.com/chargePackage/31488/1/1
+
+../inc_user_charge.php
+
+0 // error package ID
+1 // successfully --> send message
+2 // not have credit
+3 // another error --> send message
+4 // charge from web --> send message
+5 // error package conflict ( need to skip )
+
+
+
+    //--> send message ERROR
+    $content_of_send_message_to_selected_user="Not Found User ID in database";
+    $message_address_to_selected_user="Incomplete Charging";
+    echo "3";
+    $insert_message_to_send_message="insert into `messages` (message,created_at,state,u_id) values
+    ('$message_address_to_selected_user','$created_at','1','$db_id')";@mysql_query($insert_message_to_send_message,$conn);
+
+
+    //--> send message CHARGE SUCCESSFULLY
+
+    $content_of_send_message_to_selected_user="";
+    $message_address_to_selected_user="Internet is Turned On";
+    echo "1";
+    $insert_message_to_send_message="insert into orders (order_details,order_send_date,order_send_time,order_state,order_user_id,order_user_name,order_user_uname,order_type,order_answer) values ('$message_address_to_selected_user','$today_charging','$today_time','inactive','$db_id','$db_u_name','$db_u_uname','user','$content_of_send_message_to_selected_user')";@mysql_query($insert_message_to_send_message,$conn);
+
+    //--> send message CHARGE FROM WEBSITE
+
+    $content_of_send_message_to_selected_user="please charge from web site to confirm your order.";
+    $message_address_to_selected_user="Incomplete Charging";
+    echo "4";
+    $insert_message_to_send_message="insert into orders (order_details,order_send_date,order_send_time,order_state,order_user_id,order_user_name,order_user_uname,order_type,order_answer) values ('$message_address_to_selected_user','$today_charging','$today_time','inactive','$db_id','$db_u_name','$db_u_uname','user','$content_of_send_message_to_selected_user')";@mysql_query($insert_message_to_send_message,$conn);

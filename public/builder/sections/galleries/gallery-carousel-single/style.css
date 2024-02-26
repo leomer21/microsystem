@@ -1,0 +1,6 @@
+#gallery-carousel-single .bg {
+    background-image: url('./sections/galleries/gallery-carousel-single/images/bg-pattern-2.png');
+    background-repeat: repeat;
+    background-position: center;
+    opacity:0.75;
+}

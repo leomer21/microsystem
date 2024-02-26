@@ -1,0 +1,7 @@
+#footer-center-logo .bg {
+    background-image: url('./sections/footers/footer-center-logo/images/bg-3.jpg');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
+    opacity:0.35;
+}

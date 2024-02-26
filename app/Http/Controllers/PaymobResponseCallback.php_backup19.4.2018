@@ -1,0 +1,535 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Requests;
+use Illuminate\Http\Request;
+use App;
+use Hash;
+use Session;
+use Input;
+use Validator;
+use Auth;
+use Redirect;
+use DB;
+use increment;
+use Carbon\Carbon;
+use Mail;
+
+
+class PaymobResponseCallback extends Controller
+
+{
+
+    public function responseCallback(Request $request)
+    {
+        date_default_timezone_set("Africa/Cairo");
+        $today = date("Y-m-d");
+        $today_time = date("g:i a");
+        $created_at = date("Y-m-d H:i:s");
+
+        // @file_get_contents('http://requestbin.fullcontact.com/zt908hzt'); // for API debug http://requestbin.fullcontact.com/zt908hzt?inspect
+
+        $body = @file_get_contents('php://input');
+        $request = json_decode($body, true);
+        
+        if(isset($request['type'])) { $type = $request['type']; }else{ $type=""; } 
+        if(isset($request['obj']['id'])) { $obj_id = $request['obj']['id'];}else{$obj_id = ""; } // requested
+        if(isset($request['obj']['pending'])) { $obj_pending = $request['obj']['pending'];}else{$obj_pending = ""; }// requested
+        if(isset($request['obj']['amount_cents'])) { $obj_amount_cents = $request['obj']['amount_cents']; }else{ $obj_amount_cents = "";} // requested
+        if(isset($request['obj']['success'])) { $obj_success = $request['obj']['success']; }else{ $obj_success = ""; } // requested
+        // $obj_is_auth = $request['obj']['is_auth'];
+        // $obj_is_capture = $request['obj']['is_capture'];
+        // $obj_is_standalone_payment = $request['obj']['is_standalone_payment'];
+        if(isset($request['obj']['is_voided'])) { $obj_is_voided = $request['obj']['is_voided']; }else{ $obj_is_voided = ""; }// requested
+        if(isset($request['obj']['is_refunded'])) { $obj_is_refunded = $request['obj']['is_refunded']; }else{ $obj_is_refunded = ""; } // requested
+        if(isset($request['obj']['is_3d_secure'])) { $obj_is_3d_secure = $request['obj']['is_3d_secure']; }else{ $obj_is_3d_secure = ""; } // requested
+        if(isset($request['obj']['integration_id'])) { $obj_integration_id = $request['obj']['integration_id']; }else{ $obj_integration_id = ""; } // requested
+        // $obj_profile_id = $request['obj']['profile_id'];
+        if(isset($request['obj']['has_parent_transaction'])) { $obj_has_parent_transaction = $request['obj']['has_parent_transaction']; }else{ $obj_has_parent_transaction = ""; } // requested
+        
+        // $obj_order_id = $request['obj']['order']['id'];
+        // $obj_order_created_at = $request['obj']['order']['created_at'];
+        // $obj_order_delivery_needed = $request['obj']['order']['delivery_needed'];
+
+        // $obj_order_merchant_id = $request['obj']['order']['merchant']['id'];
+        // $obj_order_merchant_created_at = $request['obj']['order']['merchant']['created_at'];
+        //$obj_order_merchant_phones = $request['obj']['order']['merchant']['phones'];
+
+        //$obj_order_company_emails = $request['obj']['order']['merchant']['company_emails'];
+        // $obj_order_company_name = $request['obj']['order']['merchant']['company_name'];
+        // $obj_order_state = $request['obj']['order']['merchant']['state'];
+        // $obj_order_country = $request['obj']['order']['merchant']['country'];
+        // $obj_order_city = $request['obj']['order']['merchant']['city'];
+        // $obj_order_postal_code = $request['obj']['order']['merchant']['postal_code'];
+        // $obj_order_street = $request['obj']['order']['merchant']['street'];
+        
+        // $obj_order_collector = $request['obj']['order']['collector'];
+        if(isset($request['obj']['order']['amount_cents'])) { $obj_order_amount_cents = $request['obj']['order']['amount_cents']; }else{ $obj_order_amount_cents = ""; } // requested
+
+        // $obj_order_shipping_data_id = $request['obj']['order']['shipping_data']['id'];
+        // $obj_order_shipping_data_first_name = $request['obj']['order']['shipping_data']['first_name'];
+        // $obj_order_shipping_data_last_name = $request['obj']['order']['shipping_data']['last_name'];
+        // $obj_order_shipping_data_street = $request['obj']['order']['shipping_data']['street'];
+        // $obj_order_shipping_data_building = $request['obj']['order']['shipping_data']['building'];
+        // $obj_order_shipping_data_floor = $request['obj']['order']['shipping_data']['floor'];
+        // $obj_order_shipping_data_apartment = $request['obj']['order']['shipping_data']['apartment'];
+        // $obj_order_shipping_data_city = $request['obj']['order']['shipping_data']['city'];
+        // $obj_order_shipping_data_state = $request['obj']['order']['shipping_data']['state'];
+        // $obj_order_shipping_data_country = $request['obj']['order']['shipping_data']['country'];
+        // $obj_order_shipping_data_email = $request['obj']['order']['shipping_data']['email'];
+        // $obj_order_shipping_data_phone_number = $request['obj']['order']['shipping_data']['phone_number'];
+        // $obj_order_shipping_data_postal_code = $request['obj']['order']['shipping_data']['postal_code'];
+        // $obj_order_shipping_data_extra_description = $request['obj']['order']['shipping_data']['extra_description'];
+        // $obj_order_shipping_data_shipping_method = $request['obj']['order']['shipping_data']['shipping_method'];
+        // $obj_order_shipping_data_order_id = $request['obj']['order']['shipping_data']['order_id'];
+        // $obj_order_shipping_data_order = $request['obj']['order']['shipping_data']['order'];
+        
+        // $obj_order_currency = $request['obj']['order']['currency']; 
+        // $obj_order_is_payment_locked = $request['obj']['order']['is_payment_locked'];
+        if(isset($request['obj']['order']['merchant_order_id'])) { $obj_order_merchant_order_id = $request['obj']['order']['merchant_order_id']; }else{ $obj_order_merchant_order_id = ""; } // requested
+        // $obj_order_wallet_notification = $request['obj']['order']['wallet_notification'];
+        if(isset($request['obj']['order']['paid_amount_cents'])) { $obj_order_paid_amount_cents = $request['obj']['order']['paid_amount_cents']; $amount = $obj_order_paid_amount_cents/100; }else{ $obj_order_paid_amount_cents = ""; $amount = "";} // requested
+        //$obj_order_paid_amount_cents = $obj_order_paid_amount_cents/100;
+        //$obj_order_items = $request['obj']['order']['items'];
+
+        if(isset($request['obj']['created_at'])) { $obj_created_at = $request['obj']['created_at']; }else{ $obj_created_at = ""; } // requested
+        //$obj_transaction_processed_callback_responses = $request['obj']['transaction_processed_callback_responses'];
+        if(isset( $request['obj']['currency'] )) { $obj_currency = $request['obj']['currency']; }else{ $obj_currency = "";} // requested
+
+        if(isset( $request['obj']['source_data']['sub_type'] )) { $obj_source_data_sub_type = $request['obj']['source_data']['sub_type']; }else{ $obj_source_data_sub_type = ""; } // requested
+        if(isset( $request['obj']['source_data']['type'] )) { $obj_source_data_type = $request['obj']['source_data']['type']; }else{ $obj_source_data_type = ""; } // requested
+        if($obj_source_data_type == "wallet"){
+            // if transaction through wallet 
+            $obj_source_data_pan = $request['obj']['source_data']['identifier']; // requested
+        }else{
+            // if transaction through Card 
+            $obj_source_data_pan = $request['obj']['source_data']['pan']; // requested
+        }
+        
+        if($obj_source_data_type == "card"){
+            
+            // $obj_data_merchant_txn_ref = $request['obj']['data']['merchant_txn_ref'];
+            // $obj_data_card_num = $request['obj']['data']['card_num'];
+            // $obj_data_avs_result_code = $request['obj']['data']['avs_result_code'];
+            // $obj_data_order_info = $request['obj']['data']['order_info'];
+            // $obj_data_merchant = $request['obj']['data']['merchant'];
+            // $obj_data_avs_acq_response_code = $request['obj']['data']['avs_acq_response_code'];
+            // $obj_data_transaction_no = $request['obj']['data']['transaction_no'];
+            // $obj_data_batch_no = $request['obj']['data']['batch_no'];
+            // $obj_data_message = $request['obj']['data']['message'];
+            // $obj_data_txn_response_code = $request['obj']['data']['txn_response_code'];
+            // $obj_data_secure_hash = $request['obj']['data']['secure_hash'];
+            // $obj_data_card_type = $request['obj']['data']['card_type'];
+            // $obj_data_receipt_no = $request['obj']['data']['receipt_no'];
+            // $obj_data_created_at = $request['obj']['data']['created_at'];
+            // $obj_data_currency = $request['obj']['data']['currency'];
+            // $obj_data_klass = $request['obj']['data']['klass'];
+            // $obj_data_authorize_id = $request['obj']['data']['authorize_id'];
+            // $obj_data_amount = $request['obj']['data']['amount'];
+            // $obj_data_acq_response_code = $request['obj']['data']['acq_response_code'];
+            // $obj_data_command = $request['obj']['data']['command'];
+            // $obj_data_gateway_integration_pk = $request['obj']['data']['gateway_integration_pk'];
+
+            // $obj_payment_key_claims_exp = $request['obj']['payment_key_claims']['exp'];
+            // $obj_payment_key_claims_currency = $request['obj']['payment_key_claims']['currency'];
+            // $obj_payment_key_claims_amount_cents = $request['obj']['payment_key_claims']['amount_cents'];
+            // $obj_payment_key_claims_user_id = $request['obj']['payment_key_claims']['user_id'];
+            // $obj_payment_key_claims_card_integration_id = $request['obj']['payment_key_claims']['integration_id'];
+
+
+            // $obj_payment_key_claims_shipping_data_state = $request['obj']['payment_key_claims']['shipping_data']['state'];
+            // $obj_payment_key_claims_shipping_data_country = $request['obj']['payment_key_claims']['shipping_data']['country'];
+            // $obj_payment_key_claims_shipping_data_first_name = $request['obj']['payment_key_claims']['shipping_data']['first_name'];
+            // $obj_payment_key_claims_shipping_data_last_name = $request['obj']['payment_key_claims']['shipping_data']['last_name'];
+            // $obj_payment_key_claims_shipping_data_postal_code = $request['obj']['payment_key_claims']['shipping_data']['postal_code'];
+            // $obj_payment_key_claims_shipping_data_floor = $request['obj']['payment_key_claims']['shipping_data']['floor'];
+            // $obj_payment_key_claims_shipping_data_city = $request['obj']['payment_key_claims']['shipping_data']['city'];
+            // $obj_payment_key_claims_shipping_data_street = $request['obj']['payment_key_claims']['shipping_data']['street'];
+            // $obj_payment_key_claims_shipping_data_building = $request['obj']['payment_key_claims']['shipping_data']['building'];
+            // $obj_payment_key_claims_shipping_data_phone_number = $request['obj']['payment_key_claims']['shipping_data']['phone_number'];
+            // $obj_payment_key_claims_shipping_data_extra_description = $request['obj']['payment_key_claims']['shipping_data']['extra_description'];
+            // $obj_payment_key_claims_shipping_data_shipping_method = $request['obj']['payment_key_claims']['shipping_data']['shipping_method'];
+            // $obj_payment_key_claims_shipping_data_apartment = $request['obj']['payment_key_claims']['shipping_data']['apartment'];
+            // $obj_payment_key_claims_shipping_data_email = $request['obj']['payment_key_claims']['shipping_data']['email'];
+
+        }
+        
+        // $obj_error_occured = $request['obj']['error_occured'];
+        // $obj_owner = $request['obj']['owner'];
+        // $obj_parent_transaction = $request['obj']['parent_transaction'];
+
+        // add user credit
+        // $getUserID=App\Users::where('u_mobile', $obj_order_shipping_data_phone_number)->value('u_id');
+        // if(isset($getUserID))
+        // {
+        //     App\Users::where('u_id', $getUserID)->increment('credit',$obj_order_paid_amount_cents);
+        // }
+       
+        // insert DB
+        $orderID = $obj_order_merchant_order_id-1000;
+        $paymentData = DB::table('payment')->where('id',$orderID)->first();
+        $customerID = $paymentData->customer_id;
+        if(isset($customerID)){
+
+            $Customer = DB::table('customers')->where('id',$customerID)->first();
+            $package = DB::table('packages')->where('id',$paymentData->package_id)->first();
+            // get current package info
+            $packageBefore = DB::table('packages')->where('id',$Customer->package_id)->first();
+            // inset data into DB    
+            DB::table('payment_response')->insert([
+                'type' => $type
+                , 'amount' => $amount // requested
+                , 'customer_id' => $customerID // requested
+                , 'obj_id' => $obj_id // requested
+                , 'obj_pending' => $obj_pending // requested
+                , 'obj_amountCents' => $obj_amount_cents // requested
+                , 'obj_success' => $obj_success // requested
+                , 'obj_isVoided' => $obj_is_voided // requested
+                , 'obj_isRefunded' => $obj_is_refunded // requested
+                , 'obj_is3dsecure' => $obj_is_3d_secure // requested
+                , 'obj_integrationID' => $obj_integration_id // requested
+                , 'obj_hasParentTransaction' => $obj_has_parent_transaction // requested
+                
+                , 'obj_order_amountCents' => $obj_order_amount_cents // requested
+                
+                , 'obj_order_merchantOrderID' => $obj_order_merchant_order_id // requested
+                , 'obj_order_paidAmountCents' => $obj_order_paid_amount_cents // requested
+                
+                , 'obj_createdAt' => $obj_created_at // requested
+                , 'obj_currency' => $obj_currency // requested
+                
+                , 'obj_sourceData_subType' => $obj_source_data_sub_type // requested
+                , 'obj_sourceData_pan' => $obj_source_data_pan // requested
+                , 'obj_sourceData_type' => $obj_source_data_type // requested
+
+            ]);
+
+            if($obj_success == "true"){$obj_success = 1;}
+            
+            if($obj_success == 1 and isset($amount) and $amount!="" ){ // make sure transaction in success
+                
+                if( $paymentData->type == "payasyougo" )
+                {   
+                    // chech if transaction amount = invoices amount
+                    if( DB::table('invoices')->where('type', 'payasyougo')->where('state', '0')->where('customer_id', $customerID)->sum('amount') == $amount)
+                    {
+                        DB::table("invoices")->where('customer_id', $customerID )->where('type', 'payasyougo' )->where('state', '0' )->update([ 'state' => '1', 'paid_date' => $created_at ]);
+                    }else{
+                        // transaction amount != invoices amount
+                        foreach ( DB::table("invoices")->where('customer_id', $customerID )->where('type', 'payasyougo' )->where('state', '0' )->get() as $invoice )
+                        {   
+                            if( $invoice->amount <= $amount)
+                            {
+                                DB::table("invoices")->where('id', $invoice->id )->update([ 'state' => '1', 'paid_date' => $created_at ]);
+                                $amount = $amount - $invoice->amount;
+                            }
+                        }
+
+                    }
+                    return "1";
+
+                }elseif( $paymentData->type == "package" ){
+
+                    $date1 = strtotime("$Customer->next_bill");
+                    $date2 = strtotime("$today");
+                    $diff = ($date1 - $date2);
+                    $datediff = round($diff/86400);
+                    $nextBill = date('Y-m-d', strtotime("+$package->months months", strtotime($today)));
+
+                    if( $datediff > 0 )
+                    { // client have credit in current package
+                
+                        if( isset($Customer->package_id) and $Customer->package_id!="" and $Customer->package_id!="0" ){
+                            // check if renew the same package or the same concurrent but upgrade months
+                            if( $Customer->package_id == $paymentData->package_id or ( $packageBefore->concurrent_devices == $package->concurrent_devices and $package->months > $packageBefore->months)  )
+                            {
+                                $nextBill = date('Y-m-d', strtotime("+$package->months months", strtotime($Customer->next_bill)));
+                                $canRenew = "yes";
+                            }else{
+                                
+                                // if( $package->concurrent_devices > $packageBefore->months ){
+                                    // client upgrade or downgrade concurrent devices with valid backage
+                                    // Memorable Note in Franko : 7sbna leh kam wedinahomlo ayam
+
+                                    $costPerDayFoeNewPackage = $package->price / ( 30 * $package->months );
+                                    $costPerDayFoeOldPackage = $packageBefore->price / ( 30 * $packageBefore->months );
+                                    // Memorable Note in Franko : ba2elo kam feloos 
+                                    $costOfRemainingDaysInOldPackage = $datediff * $costPerDayFoeOldPackage;
+
+                                    $convertMoneyintoDays = round( $costOfRemainingDaysInOldPackage / $costPerDayFoeNewPackage,0 );
+                                    
+                                    $nextBill = date('Y-m-d', strtotime("+$package->months months", strtotime($today)));
+                                    $nextBill = date('Y-m-d', strtotime("+$convertMoneyintoDays days", strtotime($nextBill)));
+                                    $canRenew = "yes";
+                                // }
+                            }
+                        }else{
+                            $canRenew = "yes";
+                        }
+                        
+
+                    }else{
+                        $canRenew = "yes";
+                    }
+
+                    if($canRenew == "yes"){
+                        // Enable subscription 
+                        // set customer state 1 and update nextbill and package ID into customers table
+                        DB::table("customers")->where( 'id', $customerID )->update([ 'state' => '1', 'package_id' => $package->id, 'next_bill' => $nextBill ]);
+                        // set currently concurrent limit to 0 (unlimited) for radius page
+                        DB::table($Customer->database.".settings")->where( 'type', 'currently_max_concurrent' )->update([ 'value' => $package->concurrent_devices ]);
+                        // set WiFi Marketing state
+                        if( $package->modules == "wifi_marketing" ){
+                            DB::table($Customer->database.".settings")->where( 'type', 'marketing_enable' )->update([ 'value' => '1', 'state' => '1' ]);
+                            DB::table($Customer->database.".settings")->where( 'type', 'commercial_enable' )->update([ 'value' => '1', 'state' => '1' ]);
+                        }
+                        if( $package->modules == "internet_management" ){
+                            DB::table($Customer->database.".settings")->where( 'type', 'marketing_enable' )->update([ 'value' => '0', 'state' => '0' ]);
+                            DB::table($Customer->database.".settings")->where( 'type', 'commercial_enable' )->update([ 'value' => '0', 'state' => '0' ]);
+                        }
+                        // set network state 1
+                        DB::table($Customer->database.".networks")->where( 'r_type','!=',"10" )->update([ 'state' => '1' ]);
+                        if( DB::table('invoices')->where('customer_id', $customerID )->where('type', 'package' )->where('state', '0' )->count() == 0){
+                            DB::table("invoices")->insert([
+                            ['customer_id' => $customerID, 'type' => 'package', 'package_id' => $package->id, 'amount' => $amount , 'currency' => $obj_currency, 'issue_date' => $today, 'due_date' => $today, 'state' => '1', 'paid_date' => $today, 'created_at' => $created_at, 'updated_at' => $created_at]
+                            ]);
+                        }else{
+                            // set unpaid invoice into done
+                        DB::table("invoices")->where(['customer_id'=> $customerID, 'type' => 'package', 'state' => '0' ] )->update([ 'state' => '1' , 'package_id' => $package->id, 'amount' => $amount , 'currency' => $obj_currency, 'paid_date' => $today,'updated_at' => $created_at ]);
+                        }
+                        
+                        
+                        // send email
+                        // get system email
+                        $customerName = DB::table($Customer->database.".settings")->where('type','app_name')->value('value');
+                        $customerPhone = DB::table($Customer->database.".settings")->where('type','phone')->value('value');
+                        $customerEmail = DB::table($Customer->database.".settings")->where('type','email')->value('value');
+                        $customerEmailArray = array($customerEmail, 'support@microsystem.com.eg');
+                        $customerEmail = $customerEmail.';support@microsystem.com.eg';
+                        
+                        // sending email
+                        $content = "Dear $customerName, <br> <font color=green> Congratulations, Your subscription has been renewed for $package->months months,</font> 
+                        <br>
+                        your next renewal date is $nextBill.
+                        <br>
+                        Access to your <a target='_blank' href='http://$Customer->url/settings'>Administration control panel</a>
+                        <br>
+                        Your account mananaget number: +2 010 126 66 854
+                        <br><br>
+                        Thanks,<br>
+                        Best Regards.<br>";
+                        $from = "support@microsystem.com.eg";
+                        $subject = "Microsystem WiFi | Congratulations, Your subscription has been renewed successfully.";
+
+                        Mail::send('emails.send', ['title' => $subject, 'content' => $content], function ($message) use ($customerEmailArray, $customerName, $from, $subject) {
+                            $message->from($from, $customerName);
+                            $message->to($customerEmailArray, $customerName)->subject($subject);
+                        });
+                        // insert notification details
+                        DB::table("notifications")->insert([['customer_id' => $customerID, 'date' => $today, 'created_at' => $created_at, 'type' => 'subscription_remind_last_day']]);
+                    }
+                }
+            }
+
+        }
+    
+        /*
+        if($obj_source_data_type == "card"){
+
+            DB::table('payment_response')->insert([
+                'type' => $type
+                , 'obj_id' => $obj_id // requested
+                , 'obj_pending' => $obj_pending // requested
+                , 'obj_amountCents' => $obj_amount_cents // requested
+                , 'obj_success' => $obj_success // requested
+                // , 'obj_isAuth' => $obj_is_auth 
+                // , 'obj_isCapture' => $obj_is_capture 
+                // , 'obj_isStandalone' => $obj_is_standalone_payment 
+                , 'obj_isVoided' => $obj_is_voided // requested
+                , 'obj_isRefunded' => $obj_is_refunded // requested
+                , 'obj_is3dsecure' => $obj_is_3d_secure // requested
+                , 'obj_integrationID' => $obj_integration_id // requested
+                , 'obj_hasParentTransaction' => $obj_has_parent_transaction // requested
+                
+                // , 'obj_order_id' => $obj_order_id 
+                // , 'obj_order_createdat' => $obj_order_created_at 
+                // , 'obj_order_deliveryneeded' => $obj_order_delivery_needed 
+                // , 'obj_order_merchant_id' => $obj_order_merchant_id 
+                // , 'obj_order_merchant_createdat' => $obj_order_merchant_created_at 
+                //, 'obj_order_merchant_phones' => $obj_order_merchant_phones 
+                //, 'obj_order_merchant_companyEmails' => $obj_order_company_emails 
+                // , 'obj_order_merchant_companyName' => $obj_order_company_name 
+                // , 'obj_order_merchant_state' => $obj_order_state 
+                // , 'obj_order_merchant_country' => $obj_order_country 
+                // , 'obj_order_merchant_city' => $obj_order_city 
+                // , 'obj_order_merchant_postal' => $obj_order_postal_code 
+                // , 'obj_order_merchant_street' => $obj_order_street
+                
+                // , 'obj_order_collector' => $obj_order_collector 
+                , 'obj_order_amountCents' => $obj_order_amount_cents // requested
+                
+                // , 'obj_order_shippingData_id' => $obj_order_shipping_data_id 
+                // , 'obj_order_shippingData_firstName' => $obj_order_shipping_data_first_name 
+                // , 'obj_order_shippingData_lastName' => $obj_order_shipping_data_last_name 
+                // , 'obj_order_shippingData_street' => $obj_order_shipping_data_street 
+                // , 'obj_order_shippingData_building' => $obj_order_shipping_data_building 
+                // , 'obj_order_shippingData_floor' => $obj_order_shipping_data_floor 
+                // , 'obj_order_shippingData_apartment' => $obj_order_shipping_data_apartment 
+                // , 'obj_order_shippingData_city' => $obj_order_shipping_data_city 
+                // , 'obj_order_shippingData_state' => $obj_order_shipping_data_state 
+                // , 'obj_order_shippingData_country' => $obj_order_shipping_data_country 
+                // , 'obj_order_shippingData_emil' => $obj_order_shipping_data_email 
+                // , 'obj_order_shippingData_phoneNumber' => $obj_order_shipping_data_phone_number 
+                // , 'obj_order_shippingData_postalCode' => $obj_order_shipping_data_postal_code 
+                // , 'obj_order_shippingData_extraDesc' => $obj_order_shipping_data_extra_description 
+                // , 'obj_order_shippingData_shippingMethod' => $obj_order_shipping_data_shipping_method 
+                // , 'obj_order_shippingData_orderID' => $obj_order_shipping_data_order_id 
+                // , 'obj_order_shippingData_order' => $obj_order_shipping_data_order
+                
+                // , 'obj_order_currency' => $obj_order_currency 
+                // , 'obj_order_isPaymentLocked' => $obj_order_is_payment_locked 
+                , 'obj_order_merchantOrderID' => $obj_order_merchant_order_id // requested
+                // , 'obj_order_walletNotification' => $obj_order_wallet_notification 
+                , 'obj_order_paidAmountCents' => $obj_order_paid_amount_cents // requested
+                //, 'obj_order_items' => $obj_order_items
+                
+                , 'obj_createdAt' => $obj_created_at // requested
+                //, 'obj_transactionProcessedCallbackResponses' => $obj_transaction_processed_callback_responses 
+                , 'obj_currency' => $obj_currency // requested
+                
+                , 'obj_sourceData_subType' => $obj_source_data_sub_type // requested
+                , 'obj_sourceData_pan' => $obj_source_data_pan // requested
+                , 'obj_sourceData_type' => $obj_source_data_type // requested
+                //if($obj_source_data_type == "card"){
+                    // , 'obj_data_merchanttxnref' => $obj_data_merchant_txn_ref 
+                    // , 'obj_data_cardNum' => $obj_data_card_num 
+                    // , 'obj_data_avsResultCode' => $obj_data_avs_result_code 
+                    // , 'obj_data_orderInfo' => $obj_data_order_info 
+                    // , 'obj_data_merchant' => $obj_data_merchant 
+                    // , 'obj_data_avsacqResponseCode' => $obj_data_avs_acq_response_code 
+                    // , 'obj_data_transactionNo' => $obj_data_transaction_no 
+                    // , 'obj_data_batchNo' => $obj_data_batch_no 
+                    // , 'obj_data_message' => $obj_data_message 
+                    // , 'obj_data_txnResponseCode' => $obj_data_txn_response_code 
+                    // , 'obj_data_secureHash' => $obj_data_secure_hash 
+                    // , 'obj_data_cardType' => $obj_data_card_type 
+                    // , 'obj_data_receiptNo' => $obj_data_receipt_no 
+                    // , 'obj_data_createdAt' => $obj_data_created_at 
+                    // , 'obj_data_currency' => $obj_data_currency 
+                    // , 'obj_data_klass' => $obj_data_klass 
+                    // , 'obj_data_authorizedID' => $obj_data_authorize_id 
+                    // , 'obj_data_amount' => $obj_data_amount 
+                    // , 'obj_data_acqResponseCode' => $obj_data_acq_response_code 
+                    // , 'obj_data_command' => $obj_data_command 
+                    // , 'obj_data_gatewayIntegrationPK' => $obj_data_gateway_integration_pk
+                    
+                    // , 'obj_paymentKeyClaims_exp' => $obj_payment_key_claims_exp 
+                    // , 'obj_paymentKeyClaims_currency' => $obj_payment_key_claims_currency 
+                    // , 'obj_paymentKeyClaims_amountCents' => $obj_payment_key_claims_amount_cents 
+                    // , 'obj_paymentKeyClaims_userID' => $obj_payment_key_claims_user_id 
+                    // , 'obj_paymentKeyClaims_cardIntegrationID' => $obj_payment_key_claims_card_integration_id
+                    
+                    //, 'obj_paymentKeyClaims_shippingData_state' => $obj_payment_key_claims_shipping_data_state 
+                    // , 'obj_paymentKeyClaims_shippingData_country' => $obj_payment_key_claims_shipping_data_country 
+                    // , 'obj_paymentKeyClaims_shippingData_firstName' => $obj_payment_key_claims_shipping_data_first_name 
+                    // , 'obj_paymentKeyClaims_shippingData_lastName' => $obj_payment_key_claims_shipping_data_last_name 
+                    // , 'obj_paymentKeyClaims_shippingData_postalCode' => $obj_payment_key_claims_shipping_data_postal_code 
+                    // , 'obj_paymentKeyClaims_shippingData_floor' => $obj_payment_key_claims_shipping_data_floor 
+                    // , 'obj_paymentKeyClaims_shippingData_city' => $obj_payment_key_claims_shipping_data_city 
+                    // , 'obj_paymentKeyClaims_shippingData_street' => $obj_payment_key_claims_shipping_data_street 
+                    // , 'obj_paymentKeyClaims_shippingData_building' => $obj_payment_key_claims_shipping_data_building 
+                    // , 'obj_paymentKeyClaims_shippingData_phoneNumber' => $obj_payment_key_claims_shipping_data_phone_number 
+                    // , 'obj_paymentKeyClaims_shippingData_extraDesc' => $obj_payment_key_claims_shipping_data_extra_description 
+                    // , 'obj_paymentKeyClaims_shippingData_shippingMethod' => $obj_payment_key_claims_shipping_data_shipping_method 
+                    // , 'obj_paymentKeyClaims_shippingData_apartment' => $obj_payment_key_claims_shipping_data_apartment 
+                    // , 'obj_paymentKeyClaims_shippingData_email' => $obj_payment_key_claims_shipping_data_email
+            // }             
+                // , 'obj_errorOccured' => $obj_error_occured 
+                // , 'obj_owner' => $obj_owner 
+                // , 'obj_parentTransaction' => $obj_parent_transaction
+
+            ]);
+            return "1";
+        }elseif($obj_source_data_type == "wallet"){
+                DB::table('payment_response')->insert([
+                'type' => $type
+                , 'obj_id' => $obj_id // requested
+                , 'obj_pending' => $obj_pending // requested
+                , 'obj_amountCents' => $obj_amount_cents // requested
+                , 'obj_success' => $obj_success // requested
+                // , 'obj_isAuth' => $obj_is_auth 
+                // , 'obj_isCapture' => $obj_is_capture 
+                // , 'obj_isStandalone' => $obj_is_standalone_payment 
+                , 'obj_isVoided' => $obj_is_voided // requested
+                , 'obj_isRefunded' => $obj_is_refunded // requested
+                , 'obj_is3dsecure' => $obj_is_3d_secure // requested
+                , 'obj_integrationID' => $obj_integration_id // requested
+                // , 'obj_profileID' => $obj_profile_id 
+                , 'obj_hasParentTransaction' => $obj_has_parent_transaction // requested
+                
+                // , 'obj_order_id' => $obj_order_id 
+                // , 'obj_order_createdat' => $obj_order_created_at 
+                // , 'obj_order_deliveryneeded' => $obj_order_delivery_needed 
+                // , 'obj_order_merchant_id' => $obj_order_merchant_id 
+                // , 'obj_order_merchant_createdat' => $obj_order_merchant_created_at 
+                //, 'obj_order_merchant_phones' => $obj_order_merchant_phones 
+                //, 'obj_order_merchant_companyEmails' => $obj_order_company_emails 
+                // , 'obj_order_merchant_companyName' => $obj_order_company_name 
+                // , 'obj_order_merchant_state' => $obj_order_state 
+                // , 'obj_order_merchant_country' => $obj_order_country 
+                // , 'obj_order_merchant_city' => $obj_order_city 
+                // , 'obj_order_merchant_postal' => $obj_order_postal_code 
+                // , 'obj_order_merchant_street' => $obj_order_street
+                
+                // , 'obj_order_collector' => $obj_order_collector 
+                , 'obj_order_amountCents' => $obj_order_amount_cents // requested
+                
+                // , 'obj_order_shippingData_id' => $obj_order_shipping_data_id 
+                // , 'obj_order_shippingData_firstName' => $obj_order_shipping_data_first_name 
+                // , 'obj_order_shippingData_lastName' => $obj_order_shipping_data_last_name 
+                // , 'obj_order_shippingData_street' => $obj_order_shipping_data_street 
+                // , 'obj_order_shippingData_building' => $obj_order_shipping_data_building 
+                // , 'obj_order_shippingData_floor' => $obj_order_shipping_data_floor 
+                // , 'obj_order_shippingData_apartment' => $obj_order_shipping_data_apartment 
+                // , 'obj_order_shippingData_city' => $obj_order_shipping_data_city 
+                // , 'obj_order_shippingData_state' => $obj_order_shipping_data_state 
+                // , 'obj_order_shippingData_country' => $obj_order_shipping_data_country 
+                // , 'obj_order_shippingData_emil' => $obj_order_shipping_data_email 
+                // , 'obj_order_shippingData_phoneNumber' => $obj_order_shipping_data_phone_number 
+                // , 'obj_order_shippingData_postalCode' => $obj_order_shipping_data_postal_code 
+                // , 'obj_order_shippingData_extraDesc' => $obj_order_shipping_data_extra_description 
+                // , 'obj_order_shippingData_shippingMethod' => $obj_order_shipping_data_shipping_method 
+                // , 'obj_order_shippingData_orderID' => $obj_order_shipping_data_order_id 
+                // , 'obj_order_shippingData_order' => $obj_order_shipping_data_order
+                
+                // , 'obj_order_currency' => $obj_order_currency 
+                // , 'obj_order_isPaymentLocked' => $obj_order_is_payment_locked 
+                , 'obj_order_merchantOrderID' => $obj_order_merchant_order_id // requested
+                // , 'obj_order_walletNotification' => $obj_order_wallet_notification 
+                , 'obj_order_paidAmountCents' => $obj_order_paid_amount_cents // requested
+                //, 'obj_order_items' => $obj_order_items
+                
+                , 'obj_createdAt' => $obj_created_at // requested
+                //, 'obj_transactionProcessedCallbackResponses' => $obj_transaction_processed_callback_responses 
+                , 'obj_currency' => $obj_currency // requested
+                
+                , 'obj_sourceData_subType' => $obj_source_data_sub_type // requested
+                , 'obj_sourceData_pan' => $obj_source_data_pan // requested
+                , 'obj_sourceData_type' => $obj_source_data_type // requested
+            
+                // , 'obj_errorOccured' => $obj_error_occured 
+                // , 'obj_owner' => $obj_owner 
+                // , 'obj_parentTransaction' => $obj_parent_transaction
+                ]);
+            return "1";
+        }
+        */
+
+        
+    }
+
+
+    
+};
+

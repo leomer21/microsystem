@@ -1,0 +1,202 @@
+/* --------------- Color Style ------------------ */
+.bg-1-color-dark {
+background-color: #353B4A;
+}
+.dark-page #preloader {
+background-color: #353B4A;
+}
+.dark-page {
+background-color: #353B4A;
+}
+.bg-2-color-dark {
+background-color: #222222;
+}
+.bg-3-color-dark {
+background-color: #2b356f;
+}
+.dark-page #preloader div {
+border-color: #f3f3f3!important;
+}
+.dark-page #preloader div div {
+background-color: #f3f3f3!important;
+}
+.bg-1-color-light {
+background-color: #ffffff;
+}
+.light-page #preloader {
+background-color: #ffffff;
+}
+.light-page {
+background-color: #ffffff;
+}
+.bg-2-color-light {
+background-color: #f8f9fb;
+}
+.bg-3-color-light {
+background-color: #e9fbff;
+}
+.light-page #preloader div {
+border-color: #504ABC!important;
+}
+.light-page #preloader div div {
+background-color: #504ABC!important;
+}
+.dark  {
+color: #ffffff;
+}
+.dark mark {
+color: #000000;
+}
+.dark mark {
+background-color: #ffff60;
+}
+.dark h1 {
+color: #ffffff;
+}
+.dark h2 {
+color: #ffffff;
+}
+.dark h3 {
+color: #ffffff;
+}
+.dark h4 {
+color: #ffffff;
+}
+.dark.sep-b:after {
+border-color: #777777;
+}
+.dark.sep-full-b:after {
+border-color: #777777;
+}
+.dark hr {
+border-color: #777777;
+}
+.dark .border-box {
+border-color: #777777;
+}
+.dark a:not(.btn):not(.gallery-box):not(.goodshare) {
+color: #ffffff;
+}
+.dark a.btn-link {
+color: #ffffff;
+}
+.dark a:not(.btn):not(.gallery-box):not(.goodshare):hover {
+color: #00a7ff;
+}
+.dark .btn-primary {
+background-color: #07bcf7;
+border-color: #07bcf7;
+}
+.dark .btn-primary:hover {
+background-color: #039dd0;
+border-color: #039dd0;
+}
+.dark .btn-default {
+color: #ffffff;
+border-color: #ffffff;
+}
+.dark .btn-default:hover {
+color: #eeeeee;
+border-color: #eeeeee;
+}
+.dark i.icon-color {
+color: #FFFFFF;
+}
+.light  {
+color: #444444;
+}
+.light mark {
+color: #000000;
+}
+.light mark {
+background-color: #ffff60;
+}
+.light h1 {
+color: #504ABC;
+}
+.light h2 {
+color: #504ABC;
+}
+.light h3 {
+color: #504ABC;
+}
+.light h4 {
+color: #555555;
+}
+.light.sep-b:after {
+border-color: #eeeeee;
+}
+.light.sep-full-b:after {
+border-color: #eeeeee;
+}
+.light hr {
+border-color: #eeeeee;
+}
+.light .border-box {
+border-color: #eeeeee;
+}
+.light a:not(.btn):not(.gallery-box):not(.goodshare) {
+color: #222;
+}
+.light a.btn-link {
+color: #222;
+}
+.light a:not(.btn):not(.gallery-box):not(.goodshare):hover {
+color: #00a7ff;
+}
+.light .btn-primary {
+background-color: #07bcf7;
+border-color: #07bcf7;
+}
+.light .btn-primary:hover {
+background-color: #039dd0;
+border-color: #039dd0;
+}
+.light .btn-default {
+color: #555555;
+border-color: #555555;
+}
+.light .btn-default:hover {
+color: #222222;
+border-color: #222222;
+}
+.light i.icon-color {
+color: #EF9FFF;
+}
+
+/* ------------------ Typography --------------------- */
+body {
+	font-family: 'Open Sans';
+	font-size: 16px;
+	font-style: inherit;
+	font-weight: 300;
+	text-transform: inherit;
+}
+h1 {
+	font-family: 'Open Sans';
+	font-size: 72px;
+	font-style: inherit;
+	font-weight: 300;
+	text-transform: inherit;
+}
+h2 {
+	font-family: 'Open Sans';
+	font-size: 36px;
+	font-style: inherit;
+	font-weight: 300;
+	text-transform: inherit;
+}
+h3 {
+	font-family: 'Open Sans';
+	font-size: 26px;
+	font-style: inherit;
+	font-weight: 300;
+	text-transform: inherit;
+}
+h4 {
+	font-family: 'Open Sans';
+	font-size: 18px;
+	font-style: inherit;
+	font-weight: 300;
+	text-transform: inherit;
+}

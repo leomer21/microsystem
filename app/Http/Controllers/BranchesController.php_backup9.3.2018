@@ -1,0 +1,482 @@
+<?php
+namespace App\Http\Controllers;
+
+use App\Http\Requests;
+use App\Network;
+use Illuminate\Http\Request;
+use App\Branches;
+use App\Models\LoadBalancing;
+use Input;
+use DB;
+use Auth;
+use App;
+use Carbon\Carbon;
+
+class BranchesController extends Controller
+{
+
+    public function index()
+    {
+        $permissions =  app('App\Http\Controllers\DashboardController')->permissions();
+        if(Auth::user()->type == 1 && $permissions['branches'] == 1){
+            return view('back-end.branches.index',array(
+                'branches'=> Branches::all(),
+                'networks' => Network::all()
+            ));
+        }else{
+            return view('errors.404');
+        }
+    }
+
+    // get auto refresh data in branch page
+    public function Json(){
+        $permissions =  app('App\Http\Controllers\DashboardController')->permissions();
+        if(Auth::user()->type == 1 && $permissions['branches']) {
+
+            $firstDayMonth=date("Y-m")."-01";
+            $lastDayMonth=date('Y-m-t', strtotime($firstDayMonth));
+
+            $data = App\Models\BranchNetwork::get();
+            foreach ($data as $key => $value) {
+                $value->count_online = App\Models\RadacctActiveUsers::where('branch_id', $value->id)->count();
+                $value->count_users = App\Users::where('branch_id', $value->id)->count();
+                
+                // get Monthly Usage
+                $monthlyUsageUpload = App\Radacct::where('branch_id', $value->id)->whereBetween('dates',[$firstDayMonth, $lastDayMonth])->sum('acctinputoctets');
+                $monthlyUsageDownload = App\Radacct::where('branch_id', $value->id)->whereBetween('dates',[$firstDayMonth, $lastDayMonth])->sum('acctoutputoctets');
+                $monthlyTotalUsage = round(($monthlyUsageUpload + $monthlyUsageDownload)/1024/1024/1024,1)." GB";
+                $value->monthly_usage = $monthlyTotalUsage;
+                
+                // Get Total Usage
+                $usageUpload = App\Radacct::where('branch_id',$value->id)->sum('acctinputoctets');
+                $usageDownload = App\Radacct::where('branch_id',$value->id)->sum('acctoutputoctets');
+                $totalUsage = round(($usageUpload+$usageDownload)/1024/1024/1024,2)." GB";
+                $value->total_usage = $totalUsage;
+
+                
+                //return $value->last_check .'aaaaaaaaaaaaaaaaaaaaaa'. Carbon::now();
+                $lastCheckSeconds=strtotime($value->last_check);
+                //return Carbon::now();
+                $timeNowSeconds = strtotime(Carbon::now());
+                
+                //$lastCheckSeconds = strtotime("2017-10-11 10:00:00");
+                //$timeNowSeconds = strtotime("2017-10-11 10:02:01");
+                $value->delayTime = $timeNowSeconds - $lastCheckSeconds;
+                $value->cpu = $value->cpu."%";
+                if($value->last_check){
+                    $value->last_check_date = explode(' ', $value->last_check)[0];
+                    $value->last_check_time = explode(' ', $value->last_check)[1];
+                }
+            }
+            return array('aaData' => $data);
+        }else{
+            return view('errors.404');
+        }
+    }
+
+    public function Add(Request $request){
+        
+
+        //Backup connection
+        $backup_connection_state =  $request['backup-connection-state'] == 'on' ? '1' : '0';
+        if($backup_connection_state == 1){
+            $backup_connection_type = $request['backup-connection-type'];
+        }else{
+            $backup_connection_type = null;
+        }
+
+        //Wireless
+        $wireless_state = $request['wireless-state'] == 'on' ? '1' : '0';
+
+        //Private wireless    
+        $private_wireless_state = $request['private-wireless-state'] == 'on' ? '1' : '0';
+
+        if($private_wireless_state == 1){
+            $private_wireless_name = $request['private-wireless-username'];
+            $private_wireless_pass = $request['private-wireless-password'];
+            $private_wireless_ip = $request['private-wireless-ip'];
+        }else{
+            $private_wireless_name = null;
+            $private_wireless_pass = null;
+            $private_wireless_ip = null;
+        }
+
+
+        //Security    
+        $hacking_protection = $request['security-state'] == 'on' ? '1' : '0';
+        $adult_state = $request['adult-state'] == 'on' ? '1' : '0';
+
+        //Advanced script
+        $advanced_script_state = $request['advanced-script-state'] == 'on' ? '1' : '0';
+        if($advanced_script_state == 1){
+            $advanced_script = $request['advanced-script'];
+        }else{
+            $advanced_script = null;
+        }
+        $log_history_state = $request['log-history-state'] == 'on' ? '1' : '0';
+
+        // insert serial into Microsystem DB
+        $serial=$request['serial'];
+        $subdomain = url()->full();
+        $split = explode('/', $subdomain);
+        $systemIdentify=$split[2];
+        $getTenantID = DB::table('microsystem.customers')->where('url', $systemIdentify)->value('id');
+        // delete any seial
+        DB::table('microsystem.serials')->where('serial', $serial)->delete();
+        // insert new serial with tenantID
+        DB::table('microsystem.serials')->insert(['serial' => $serial, 'customer_id' => $getTenantID]);
+
+        // insert all branch data
+        $branch = Branches::insertGetId([ 'name' => $request['name'], 'network_id' => $request['networkname'], 'state' => $request['state'], 'address' => $request['address'], 'phone' => $request['phone'], 'notes' => $request['notes'], 'username' => $request['username'], 'password' => $request['password'], 'Radiussecret' => $request['Radiussecret'], 'ip' => $request['ip'], 'APIport' => $request['APIport'], 'Radiusport' => $request['Radiusport'], 'start_quota' => $request['start_quota'], 'monthly_quota' => $request['monthly_quota'], 'device_mac' => $request['device_mac'], 'serial' => $request['serial'], 'connection_type' => $request['connection-type'], 'adsl_user' => $request['adsl-username'], 'adsl_pass' => $request['adsl-password'], 'backup_connection_type' => $backup_connection_type, 'backup_connection_state' => $backup_connection_state, 'wireless_state' => $wireless_state, 'wireless_name' => $request['wireless-username'], 'wireless_pass' => $request['wireless-password'], 'private_wireless_state' => $private_wireless_state, 'private_wireless_name' => $private_wireless_name, 'private_wireless_pass' => $private_wireless_pass, 'private_wireless_ip' => $private_wireless_ip, 'hacking_protection' => $hacking_protection, 'adult_state' => $adult_state, 'advanced_script_state' => $advanced_script_state, 'advanced_script' => $advanced_script, 'users_log_history_type' => $request['log-history-type'], 'users_log_history_state' => $log_history_state]);
+
+
+        // check loadbalanceing state
+        if($request['connection-type'] == "6"){
+            Branches::where('id', '=', $branch)->update(['load_balance_state' => '1', 'change_load_balance_state' => '1']);
+        }
+        
+        $recordsCount = count($request['load-ip']);
+        for($i = 0; $i < $recordsCount; $i++)
+         { 
+            if(isset($request['load-username'][$i])){$load_username=$request['load-username'][$i];}else{$load_username="";}
+            if(isset($request['load-password'][$i])){$load_password=$request['load-password'][$i];}else{$load_password="";}
+
+           LoadBalancing::insert(['branch_id' => $branch, 'ip' => $request['load-ip'][$i], 'gateway' => $request['load-gateway'][$i], 'speed' => $request['load-speed'][$i], 'type' => $request['load-type'][$i], 'user' => $load_username, 'pass' => $load_password]); 
+        }
+
+        return redirect()->route('branches');
+    }
+
+    public function delete_branch($id){
+
+        $delete = Branches::where('id',$id)->first();
+        $delete->delete();
+        return redirect()->route('branches');
+    }
+    // change branch state direct button
+    public function state($id,$value){
+        
+        $dt = Carbon::now();
+        $value = ($value == 'true')? 1 : 0;        
+        if(Branches::where('id', $id)->value('state') != $value){
+            App\History::insert(
+                ['type1' => 'branches_changes', 'type2' => 'Admin', 'operation' => 'change_state', 'details' => '1', 'a_id' => Auth::user()->id, 'add_date' => $dt->toDateString(), 'add_time' => $dt->toTimeString()]
+            );
+
+            Branches::where('id', '=', $id)->update(['state' => $value, 'change_state' => '1']);
+        } 
+    }
+    public function branchid($id){
+        return view('back-end.branches.edit',array(
+            'branch' => Branches::find($id),
+            'networks' => Network::all(),
+            'load' => LoadBalancing::where('branch_id', $id)->get()
+        ));
+    }
+
+
+    public function Edit($id){
+
+        $dt = Carbon::now();
+        $branch = Branches::find($id);
+
+        //General
+        $branch->name = Input::get('name');
+        $branch->network_id = Input::get('networkname');
+        //$branch->state = Input::get('state');
+        $branch->address = Input::get('address');
+        $branch->phone = Input::get('phone');
+        $branch->notes = Input::get('notes');
+
+        //Basic settings
+        if($branch->username != Input::get('username')){
+            App\History::insert(
+                ['type1' => 'branches_changes', 'type2' => 'Admin', 'operation' => 'change_username', 'details' => '1', 'a_id' => Auth::user()->id, 'add_date' => $dt->toDateString(), 'add_time' => $dt->toTimeString()]
+            );
+            $branch->change_username_or_password = 1;
+            $branch->username = Input::get('username'); 
+        }
+        if($branch->password != Input::get('password')){
+            App\History::insert(
+                ['type1' => 'branches_changes', 'type2' => 'Admin', 'operation' => 'change_password', 'details' => '1', 'a_id' => Auth::user()->id, 'add_date' => $dt->toDateString(), 'add_time' => $dt->toTimeString()]
+            );
+            $branch->change_username_or_password = 1;
+            $branch->password = Input::get('password'); 
+        }
+        $branch->Radiussecret = Input::get('Radiussecret');
+        $branch->ip = Input::get('ip');
+        $branch->APIport = Input::get('APIport');
+        $branch->Radiusport = Input::get('Radiusport');
+        $branch->start_quota = Input::get('start_quota');
+        $branch->monthly_quota = Input::get('monthly_quota');
+        $branch->device_mac = Input::get('device_mac');
+        $branch->serial = Input::get('serial');
+
+        // insert serial into Microsystem DB
+        $serial=Input::get('serial');
+        $subdomain = url()->full();
+        $split = explode('/', $subdomain);
+        $systemIdentify=$split[2];  
+        $getTenantID = DB::table('microsystem.customers')->where('url', $systemIdentify)->value('id');
+        // delete any seial
+        DB::table('microsystem.serials')->where('serial', $serial)->delete();
+        // insert new serial with tenantID
+        DB::table('microsystem.serials')->insert(['serial' => $serial, 'customer_id' => $getTenantID]);
+
+
+        //Connection
+        if($branch->connection_type != Input::get('connection-type')){
+            App\History::insert(
+                ['type1' => 'branches_changes', 'type2' => 'Admin', 'operation' => 'change_connection_type', 'details' => '1', 'a_id' => Auth::user()->id, 'add_date' => $dt->toDateString(), 'add_time' => $dt->toTimeString()]
+            );
+            $branch->change_connection_type = 1;
+            $branch->connection_type = Input::get('connection-type'); 
+            // check loadbalanceing state
+            if($branch->connection_type == "6"){
+                $branch->load_balance_state="1";
+                $branch->change_load_balance_state="1";
+            }elseif($branch->connection_type != "6"){
+                $branch->load_balance_state="0";
+                $branch->change_load_balance_state="1";
+            }
+        }
+
+        if($branch->adsl_user != Input::get('adsl-username')){
+            App\History::insert(
+                ['type1' => 'branches_changes', 'type2' => 'Admin', 'operation' => 'change_adsl_user', 'details' => '1', 'a_id' => Auth::user()->id, 'add_date' => $dt->toDateString(), 'add_time' => $dt->toTimeString()]
+            );
+            $branch->change_adsl_user = 1;
+            $branch->adsl_user = Input::get('adsl-username');            
+        }
+        if($branch->adsl_pass != Input::get('adsl-password')){
+            App\History::insert(
+                ['type1' => 'branches_changes', 'type2' => 'Admin', 'operation' => 'change_adsl_pass', 'details' => '1', 'a_id' => Auth::user()->id, 'add_date' => $dt->toDateString(), 'add_time' => $dt->toTimeString()]
+            );
+            $branch->change_adsl_pass = 1;
+            $branch->adsl_pass = Input::get('adsl-password');            
+        }
+
+
+        //Backup connection state
+        $backup_connection_state =  Input::get('backup-connection-state') == 'on' ? '1' : '0';
+        if($branch->backup_connection_state != $backup_connection_state){
+            App\History::insert(
+                ['type1' => 'branches_changes', 'type2' => 'Admin', 'operation' => 'change_backup_connection_state', 'details' => '1', 'a_id' => Auth::user()->id, 'add_date' => $dt->toDateString(), 'add_time' => $dt->toTimeString()]
+            );
+            $branch->backup_connection_state = $backup_connection_state;
+            $branch->change_backup_connection_state = 1;
+            
+        }  
+
+        //Backup connection type
+        if( $branch->backup_connection_type!=Input::get('backup-connection-type')){
+
+            if($backup_connection_state == 1){
+                App\History::insert(
+                    ['type1' => 'branches_changes', 'type2' => 'Admin', 'operation' => 'change_backup_connection_type', 'details' => '1', 'a_id' => Auth::user()->id, 'add_date' => $dt->toDateString(), 'add_time' => $dt->toTimeString()]
+                );
+                $branch->backup_connection_type = Input::get('backup-connection-type');
+                $branch->change_backup_connection_type = 1;
+            }
+        }   
+          
+        
+        //Wireless
+        $wireless_state = Input::get('wireless-state') == 'on' ? '1' : '0';
+        if($branch->wireless_state != $wireless_state){
+            App\History::insert(
+                ['type1' => 'branches_changes', 'type2' => 'Admin', 'operation' => 'change_wireless_state', 'details' => '1', 'a_id' => Auth::user()->id, 'add_date' => $dt->toDateString(), 'add_time' => $dt->toTimeString()]
+            );
+            $branch->change_wireless_state = 1;
+            $branch->wireless_state = $wireless_state;          
+        }
+        if($branch->wireless_name != Input::get('wireless-username')){
+            App\History::insert(
+                ['type1' => 'branches_changes', 'type2' => 'Admin', 'operation' => 'change_wireless_name', 'details' => '1', 'a_id' => Auth::user()->id, 'add_date' => $dt->toDateString(), 'add_time' => $dt->toTimeString()]
+            );
+            $branch->change_wireless_name = 1;
+            $branch->wireless_name = Input::get('wireless-username');       
+        }
+        if($branch->wireless_pass != Input::get('wireless-password')){
+            App\History::insert(
+                ['type1' => 'branches_changes', 'type2' => 'Admin', 'operation' => 'change_wireless_pass', 'details' => '1', 'a_id' => Auth::user()->id, 'add_date' => $dt->toDateString(), 'add_time' => $dt->toTimeString()]
+            );
+            $branch->change_wireless_pass = 1;
+            $branch->wireless_pass = Input::get('wireless-password');      
+        }
+        
+        
+        //Private wireless    
+        $private_wireless_state = Input::get('private-wireless-state') == 'on' ? '1' : '0';
+        if($branch->private_wireless_state != $private_wireless_state){
+            App\History::insert(
+                ['type1' => 'branches_changes', 'type2' => 'Admin', 'operation' => 'change_private_wireless_state', 'details' => '1', 'a_id' => Auth::user()->id, 'add_date' => $dt->toDateString(), 'add_time' => $dt->toTimeString()]
+            );
+            $branch->change_private_wireless_state = 1;
+            $branch->private_wireless_state = $private_wireless_state;          
+        }
+
+        if($private_wireless_state == 1){
+            if($branch->private_wireless_name != Input::get('private-wireless-username')){
+                App\History::insert(
+                    ['type1' => 'branches_changes', 'type2' => 'Admin', 'operation' => 'change_private_wireless_name', 'details' => '1', 'a_id' => Auth::user()->id, 'add_date' => $dt->toDateString(), 'add_time' => $dt->toTimeString()]
+                );
+                $branch->change_private_wireless_name  = 1;
+                $branch->private_wireless_name = Input::get('private-wireless-username');      
+            }
+
+            if($branch->private_wireless_pass != Input::get('private-wireless-password')){
+                App\History::insert(
+                    ['type1' => 'branches_changes', 'type2' => 'Admin', 'operation' => 'change_private_wireless_pass', 'details' => '1', 'a_id' => Auth::user()->id, 'add_date' => $dt->toDateString(), 'add_time' => $dt->toTimeString()]
+                );
+                $branch->change_private_wireless_pass  = 1;
+                $branch->private_wireless_pass = Input::get('private-wireless-password');     
+            }
+
+            if($branch->private_wireless_ip != Input::get('private-wireless-ip')){
+                App\History::insert(
+                    ['type1' => 'branches_changes', 'type2' => 'Admin', 'operation' => 'change_private_wireless_ip', 'details' => '1', 'a_id' => Auth::user()->id, 'add_date' => $dt->toDateString(), 'add_time' => $dt->toTimeString()]
+                );
+                $branch->change_private_wireless_ip  = 1;
+                $branch->private_wireless_ip = Input::get('private-wireless-ip');     
+            }
+        }
+
+
+        //Security
+        $hacking_protection = Input::get('security-state') == 'on' ? '1' : '0';
+        if($branch->hacking_protection != $hacking_protection){
+            App\History::insert(
+                ['type1' => 'branches_changes', 'type2' => 'Admin', 'operation' => 'change_hacking_protection', 'details' => '1', 'a_id' => Auth::user()->id, 'add_date' => $dt->toDateString(), 'add_time' => $dt->toTimeString()]
+            );
+            $branch->change_hacking_protection = 1;
+            $branch->hacking_protection = $hacking_protection;         
+        }   
+        
+
+        $adult_state = Input::get('adult-state') == 'on' ? '1' : '0';
+        if($branch->adult_state != $adult_state){
+            App\History::insert(
+                ['type1' => 'branches_changes', 'type2' => 'Admin', 'operation' => 'change_adult_state', 'details' => '1', 'a_id' => Auth::user()->id, 'add_date' => $dt->toDateString(), 'add_time' => $dt->toTimeString()]
+            );
+            $branch->change_adult_state = 1;
+            $branch->adult_state = $adult_state;         
+        }
+
+        //Advanced script
+        $advanced_script_state = Input::get('advanced-script-state') == 'on' ? '1' : '0';
+        if( ($branch->advanced_script_state != $advanced_script_state) or ($advanced_script_state==1 and Input::get('edit-advanced-script')!="" and Input::get('edit-advanced-script')!=$branch->advanced_script) ){
+            // make sure advanced script is not empty and have a change
+            if(Input::get('edit-advanced-script')!="" and Input::get('edit-advanced-script')!=$branch->advanced_script){
+                $branch->advanced_script = Input::get('edit-advanced-script');
+            }
+            App\History::insert(
+            ['type1' => 'branches_changes', 'type2' => 'Admin', 'operation' => 'change_advanced_script_state', 'details' => '1', 'a_id' => Auth::user()->id, 'add_date' => $dt->toDateString(), 'add_time' => $dt->toTimeString()]
+            );
+        
+            $branch->change_advanced_script_state = 1;
+            $branch->advanced_script_state = $advanced_script_state;  
+            
+
+        }
+
+        // if($advanced_script_state == 1){
+        //     /*if($branch->advanced_script != Input::get('advanced-script')){
+        //         App\History::insert(
+        //             ['type1' => 'branches_changes', 'type2' => 'Admin', 'operation' => 'change_advanced_script_state', 'details' => '1', 'a_id' => Auth::user()->id, 'add_date' => $dt->toDateString(), 'add_time' => $dt->toTimeString()]
+        //         );
+        //         $branch->change_advanced_script_state = 1;*/
+        //         $branch->advanced_script = Input::get('edit-advanced-script');            
+        //     //}
+        // }
+
+        //Log visited sites
+        $log_history_state = Input::get('log-history-state') == 'on' ? '1' : '0';
+        if($branch->users_log_history_state != $log_history_state){
+            App\History::insert(
+                ['type1' => 'branches_changes', 'type2' => 'Admin', 'operation' => 'change_users_log_history_state', 'details' => '1', 'a_id' => Auth::user()->id, 'add_date' => $dt->toDateString(), 'add_time' => $dt->toTimeString()]
+            );
+            $branch->change_users_log_history_state = 1;
+            $branch->users_log_history_state = $log_history_state;            
+        }
+
+        if($branch->users_log_history_type != Input::get('log-history-type')){
+            App\History::insert(
+                ['type1' => 'branches_changes', 'type2' => 'Admin', 'operation' => 'change_users_log_history_type', 'details' => '1', 'a_id' => Auth::user()->id, 'add_date' => $dt->toDateString(), 'add_time' => $dt->toTimeString()]
+            );
+            $branch->change_users_log_history_type  = 1;
+            $branch->users_log_history_type = Input::get('log-history-type');     
+        }
+        
+        //check if found changes
+        $recordsCount = count(Input::get('load-ip'));
+
+        for($i = 0; $i < $recordsCount; $i++)
+        { 
+            $currCheckCount = LoadBalancing::where('ip', input::get('load-ip')[$i])->where('gateway', Input::get('load-gateway')[$i])->where('speed', Input::get('load-speed')[$i])->count(); 
+            if($currCheckCount == 0){
+                //return "found change";
+                $changeFound=1;
+                break;
+            }
+        }
+
+        //check if count not equal each other
+        if( LoadBalancing::where('branch_id', $branch->id)->count() != $recordsCount){$changeFound=1;};
+
+        // delete last landlines and insert new one
+        if(isset($changeFound) and $changeFound==1){
+            LoadBalancing::where('branch_id', $branch->id)->delete(); 
+            for($i = 0; $i < $recordsCount; $i++)
+            { 
+                if(isset(Input::get('load-username')[$i])){$load_username = Input::get('load-username')[$i]; }else{ $load_username = "";}
+                if(isset(Input::get('load-password')[$i])){$load_password = Input::get('load-password')[$i]; }else{ $load_password = "";}
+
+                LoadBalancing::insert(['branch_id' => $branch->id, 'ip' => Input::get('load-ip')[$i], 'gateway' => Input::get('load-gateway')[$i], 'speed' => Input::get('load-speed')[$i], 'type' => Input::get('load-type')[$i], 'user' => $load_username, 'pass' => $load_password]); 
+            }
+            Branches::where('id', '=', $branch->id)->update(['load_balance_state' => '1', 'change_load_balance_state' => '1']);
+        }
+        
+
+        $branch->update();
+        return redirect()->route('branches');
+    }
+
+
+    public function reboot($id, Request $request){
+        $dt = Carbon::now();
+
+        App\Branches::where('id', $id)->update([
+            'reboot' => '1'
+        ]);
+
+        App\History::insert(
+            ['type1' => 'mikrotik_reboot', 'type2' => 'Admin', 'operation' => 'mikrotik_reboot', 'details' => '1', 'a_id' => Auth::user()->id,'add_date' => $dt->toDateString(), 'add_time' => $dt->toTimeString()]
+        );
+
+        $request->session()->push('reboot_notify', App\Branches::where('id', $id)->value('name'));
+        return redirect()->route('branches');
+
+    }
+
+    public function reset($id, Request $request){
+        $dt = Carbon::now();
+
+        App\Branches::where('id', $id)->update([
+            'reset' => '1'
+        ]);
+
+        App\History::insert(
+            ['type1' => 'mikrotik_reset', 'type2' => 'Admin', 'operation' => 'mikrotik_reset', 'details' => '1', 'a_id' => Auth::user()->id,'add_date' => $dt->toDateString(), 'add_time' => $dt->toTimeString()]
+        );
+
+        $request->session()->push('reset_notify', App\Branches::where('id', $id)->value('name'));
+        return redirect()->route('branches');
+    
+    }
+    public function load_balancing_delete($id, $branchid){
+        LoadBalancing::where(['id' => $id, 'branch_id' => $branchid])->delete();  
+        Branches::where('id', '=', $branchid)->update(['change_load_balance_state' => '1']);      
+    }
+
+}

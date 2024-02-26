@@ -1,0 +1,899 @@
+<?php
+namespace App\Http\Controllers;
+
+use App\Http\Requests;
+use Illuminate\Http\Request;
+use App\Models\Campaigns;
+use App\Models\Survey;
+use App\Models\CampaignStatistics;
+use App\History;
+use Illuminate\Http\Response;
+use Input;
+use DB;
+use Validator;
+use Auth;
+use Carbon\Carbon;
+use App;
+use Identify;
+use Image;
+use Redirect;
+use Facebook;
+use Share;
+use FacebookAccountKit;
+use Mail;
+use Session;
+
+class CampaignController extends Controller
+{
+
+
+    public function Index()
+    {
+        $permissions = app('App\Http\Controllers\DashboardController')->permissions();
+        if (Auth::user()->type == 1 && $permissions['cards'] == 1) {
+            return view('back-end.campaign.index');
+        } else {
+            return view('errors.404');
+        }
+    }
+
+    // Data table data view
+    public function Json()
+    {
+        $campaigns = Campaigns::get();
+        foreach ($campaigns as $key => $value) {
+            $value->reach_count = CampaignStatistics::where('campaign_id', $value->id)->count();
+            $value->users_count = App\Users::count();
+            $value->reach_percentage = round(($value->reach_count / $value->users_count) * 100, 1);
+
+        }
+        return array('aaData' => $campaigns);
+    }
+ 
+    public function Insert(Request $request)
+    {
+        //Days selected of Day parting
+        $days = "";
+        $days = $request['sun-day'] == 'on' ? 'sun,' : '';
+        $days .= $request['mon-day'] == 'on' ? 'mon,' : '';
+        $days .= $request['tue-day'] == 'on' ? 'tue,' : '';
+        $days .= $request['wed-day'] == 'on' ? 'wed,' : '';
+        $days .= $request['thu-day'] == 'on' ? 'thu,' : '';
+        $days .= $request['fri-day'] == 'on' ? 'fri,' : '';
+        $days .= $request['sat-day'] == 'on' ? 'sat,' : '';
+
+        $open_profile = $request['open-profile'] == 'on' ? '1' : '0';
+
+        $offer_sms = $request['offer-sms'] == 'on' ? '1' : '0';
+        $offer_email = $request['offer-email'] == 'on' ? '1' : '0';
+
+        $survey_type = $request['survey-type'] == 'on' ? '1' : '0';
+
+        $start_end_date_state = $request['end-date'] == 'on' ? '1' : '0';
+
+        if ($start_end_date_state == 0) {
+            if ($request['start-date'] == Null || $request['start-date'] == "" || !$request['start-date'] || !isset($request['start-date'])) {
+                $Start_date = Carbon::now();
+                $End_date = Null;
+            } else {
+                $old_date_timestamp = strtotime($request['start-date']);
+                $Start_date = date('Y-m-d', $old_date_timestamp);
+                $End_date = Null;
+            }
+
+        } else {
+            $split = explode('-', $request['start-and-end-date']);
+            $Start_date = $split[0];
+            $Start_date = strtotime($Start_date);
+            $Start_date = date('Y-m-d', $Start_date);
+
+            $End_date = $split[1];
+            $End_date = strtotime($End_date);
+            $End_date = date('Y-m-d', $End_date);
+            
+        }
+
+        if (isset($request['offer-expire-date'])) {
+            $old_date_timestamp = strtotime($request['offer-expire-date']);
+            $Offer_expire_date = date('Y-m-d', $old_date_timestamp);
+        } else {
+            $Offer_expire_date = "";
+        }
+
+        if (isset($request['networks'])) {
+            $networks = implode(",", $request['networks']);
+        } else {
+            $networks = Null;
+        }
+        if (isset($request['branches'])) {
+            $branches = implode(",", $request['branches']);
+        } else {
+            $branches = Null;
+        }
+        if (isset($request['groups'])) {
+            $groups = implode(",", $request['groups']);
+        } else {
+
+            $groups = Null;
+        }
+        $social_offer = $request['social-offer'] == 'on' ? '1' : '0';
+        $social_network = $request['social-network'] == 'on' ? '1' : '2';
+
+        if ($request['type'] == "survey") {
+            if ($survey_type == 1) {
+                $survey_type = "poll";
+            } else {
+                $survey_type = "rating";
+            }
+            $campaign_id = Campaigns::insertGetId(
+            //Survey campaign insert
+                ['state' => '1', 'campaign_name' => $request['campaign-name'], 'ad_name' => $request['ad-name'], 'description' => $request['ad-desc'], 'type' => $request['type'], 'open_profile' => $open_profile, 'startdate' => $Start_date, 'enddate' => $End_date, 'delay' => $request['time-delay'], 'url' => $request['url'], 'question' => $request['question'], 'day_parting' => $request['day-parting'] == 'on' ? '1' : '0', 'day_parting_start' => $request['day-parting-start'], 'day_parting_end' => $request['day-parting-end'], 'days' => $days, 'network_id' => $networks, 'branch_id' => $branches, 'group_id' => $groups, 'survey_type' => $survey_type]
+            );
+            $options = explode(',', $request['options']);
+            foreach ($options as $op) {
+                //Survey insert
+                Survey::insert(
+                    ['campaign_id' => $campaign_id, 'options' => $op]
+                );
+            }
+        } else {
+
+            if (isset($request['custom-landing-page'])) {
+                $url = 'http://' . $request['custom-landing-page'] . '/index.html';
+            } else {
+                $url = $request['url'];
+            }
+            $campaign_id = Campaigns::insertGetId(
+            //Campaign insert without survey
+                ['campaign_name' => $request['campaign-name'], 'ad_name' => $request['ad-name'], 'description' => $request['ad-desc'], 'type' => $request['type'], 'state' => '1', 'open_profile' => $open_profile, 'invite_friends' => $request['invite-friends'], 'startdate' => $Start_date, 'enddate' => $End_date, 'delay' => $request['time-delay'], 'url' => $url, 'ios_url' => $request['ios-url'], 'android_url' => $request['android-url'], 'video_url' => $request['video-url'], 'text' => $request['message'], 'offer_title' => $request['offer-title'], 'social_offer' => $social_offer, 'social_network' => $social_network, 'social_post_type' => $request['social-post-type'],'offer_desc' => $request['offer-desc'], 'offer_terms' => $request['offer-terms'], 'offer_limit' => $request['offer-limit'], 'offer_sendmail' => $offer_email, 'offer_sendsms' => $offer_sms, 'offer_email_message' => $request['offer-email-message'], 'offer_sms_message' => $request['offer-sms-message'], 'offer_expire_date' => $Offer_expire_date, 'day_parting' => $request['day-parting'] == 'on' ? '1' : '0', 'day_parting_start' => $request['day-parting-start'], 'day_parting_end' => $request['day-parting-end'], 'days' => $days, 'network_id' => $networks, 'branch_id' => $branches, 'group_id' => $groups]
+            );
+
+            //Upload Background Pic
+            if ($request->hasFile('file')) {
+                $file = Input::file('file');
+                foreach ($file as $value) {
+                    $name = date('Y-m-d-H:i:s') . "-" . $value->getClientOriginalName();
+                    $value->move(public_path() . '/upload/campaigns/', $name);
+
+                    //Campaigns slider insert
+                    App\Media::insert(
+                        ['campaign_id' => $campaign_id, 'file' => $name, 'type' => 'campaigns']
+                    );
+                }
+            }
+        }
+
+        return redirect()->back();
+    }
+    // Calculate number of days in each month for a given year.
+    public function getDays($year){
+
+        $num_of_days = array();
+        $total_month = 12;
+        if($year == date('Y'))
+            $total_month = date('m');
+        else
+            $total_month = 12;
+
+        for($m=1; $m<=$total_month; $m++){
+            $num_of_days[$m] = cal_days_in_month(CAL_GREGORIAN, $m, $year);
+        }
+        return $num_of_days;
+    }
+
+    public function get_campaign($id)
+    {
+
+        $campaigns = Campaigns::find($id);
+
+
+        // $campaigns_start_date = $campaigns->startdate;
+        // $campaigns_end_date = $campaigns->enddate;
+        
+
+        // $campaigns_views =  App\History::where(['operation' => 'campaigns_views', 'details' => $id])->get();
+        // $counter = 0;
+        // foreach ($campaigns_views as $key => $value) {
+        //   $value->count = $counter++;
+        // }
+
+        // return $campaigns_views;
+
+        // $campaigns_clicks =  App\History::where(['operation' => 'campaigns_clicks', 'details' => $id])->groupBy('add_date')->get();
+        // foreach ($campaigns_clicks as $key => $value) {
+
+        //   $value->count = App\History::when($value, function ($query) use ($value) {
+        //             return $query->where('add_date', $value->add_date);
+        //     })->count();
+        // }
+        // $campaigns_reach =  CampaignStatistics::where(['campaign_id' => $id, 'type' => 'reach'])->groupBy('created_at')->get();
+        // foreach ($campaigns_reach as $key => $value) {
+
+        //   $value->count = App\History::when($value, function ($query) use ($value) {
+        //             return $query->where('add_date', $value->add_date);
+        //     })->count();
+        // }
+
+        // $campaigns_months = App\History::where(['notes' => 'campaigns', 'details' => $id])->groupBy('add_date')->get();
+        // $str = '';
+        // $array = [];
+        // $count = 0;
+        // foreach ($campaigns_months as $key => $value) {
+        //   $split = explode('-', $value->add_date);
+        //   $month =  $split[0].'-'.$split[1];
+        //   if($month == $str){
+        //         break;
+        //   }else{
+        //     $value->count = $count++;
+        //     $str = $month;
+        //   }
+        //   $array[] = $value;
+        // }
+
+        //$array = App\Models\CampaignsStatisticss::where(['details' => $id])->get();
+
+        $campaigns_survey = Survey::where(['campaign_id' => $id , 'u_id' => Null])->get();
+        
+        return view('back-end.campaign.edit', ['campaigns' => $campaigns, 'id' => $id, /*'months' => $array, 'campaigns_views' => $campaigns_views, 'campaigns_clicks' => $campaigns_clicks, 'campaigns_reach' => $campaigns_reach,*/ 'campaigns_survey' => $campaigns_survey ,'days' => $this->getDays(date("Y"))]);
+    }
+
+    public function Update($id, Request $request)
+    {   
+        $dt = Carbon::now();
+        //Days selected of Day parting
+        $days = "";
+        $days = Input::get('sun-day') == 'on' ? 'sun,' : '';
+        $days .= Input::get('mon-day') == 'on' ? 'mon,' : '';
+        $days .= Input::get('tue-day') == 'on' ? 'tue,' : '';
+        $days .= Input::get('wed-day') == 'on' ? 'wed,' : '';
+        $days .= Input::get('thu-day') == 'on' ? 'thu,' : '';
+        $days .= Input::get('fri-day') == 'on' ? 'fri,' : '';
+        $days .= Input::get('sat-day') == 'on' ? 'sat,' : '';
+
+
+        $open_profile = Input::get('open-profile') == 'on' ? '1' : '0';
+        $start_end_date_state = Input::get('end-date') == 'on' ? '1' : '0';
+
+        if ($start_end_date_state == 0) {
+            $old_date_timestamp = strtotime($request['start-date']);
+            $Start_date = date('Y-m-d', $old_date_timestamp);
+            $End_date = Null;
+        } else {
+
+            $split = explode('-', $request['start-and-end-date']);
+
+
+            $old_date_timestamp_one = strtotime($split[0]);
+            $start = date("Y-m-d", $old_date_timestamp_one);
+
+            $old_date_timestamp_tow = strtotime($split[1]);
+            $end = date("Y-m-d", $old_date_timestamp_tow);
+
+            $Start_date = $start;
+            $End_date = $end;
+        }
+
+        if (Input::get('networks')) {
+             $networks = implode(",", Input::get('networks'));
+        } else {
+            $networks = Null;
+        }
+        if (Input::get('branches')) {
+             $branches = implode(",", Input::get('branches'));
+        } else {
+            $branches = Null;
+        }
+        if (Input::get('groups')) {
+             $groups = implode(",", Input::get('groups'));
+        } else {
+            $groups = Null;
+        }
+
+        $offer_sms = Input::get('offer-sms') == 'on' ? '1' : '0';
+        $offer_email = Input::get('offer-email') == 'on' ? '1' : '0';
+
+        //return $Start_date.'aaaaaaaaaaaaaaa'.$End_date; 
+        $survey_type = Input::get('survey-type') == 'on' ? '1' : '0';
+
+        $social_offer = Input::get('social-offer') == 'on' ? '1' : '0';
+        $social_network = Input::get('social-network') == 'on' ? '1' : '2';
+
+        if (Input::get('type') == "survey") {
+            if ($survey_type == 1) {
+                $survey_type = "poll";
+            } else {
+                $survey_type = "rating";
+            }
+            Campaigns::where('id', $id)->update(
+                ['campaign_name' => Input::get('campaign-name'), 'ad_name' => Input::get('ad-name'), 'description' => Input::get('ad-desc'), 'type' => Input::get('type'), 'open_profile' => $open_profile, 'startdate' => $Start_date, 'enddate' => $End_date, 'delay' => Input::get('time-delay'), 'url' => Input::get('url'), 'question' => Input::get('question'), 'day_parting' => Input::get('day-parting') == 'on' ? '1' : '0', 'day_parting_start' => Input::get('day-parting-start'), 'day_parting_end' => Input::get('day-parting-end'), 'days' => $days, 'network_id' => $networks, 'branch_id' => $branches, 'group_id' => $groups, 'survey_type' => $survey_type]
+            );
+            Survey::where('campaign_id', $id)->delete();
+
+             $options = explode(',', Input::get('options'));
+            foreach ($options as $op) {
+                //Survey insert
+                Survey::insert(
+                    ['campaign_id' => $id, 'options' => $op, 'created_at' => $dt->toDateString()]
+                );
+            }
+        } else {
+            if (Input::get('custom-landing-page')) {
+                $url = 'http://' . Input::get('custom-landing-page') . '/index.html';
+            } else {
+                $url = Input::get('url');
+            }
+            Campaigns::where('id', $id)->update(
+            //
+                ['campaign_name' => Input::get('campaign-name'), 'ad_name' => Input::get('ad-name'), 'description' => Input::get('ad-desc'), 'type' => Input::get('type'), 'open_profile' => $open_profile, 'delay' => Input::get('time-delay'), 'startdate' => $Start_date, 'enddate' => $End_date, 'url' => $url, 'ios_url' => Input::get('ios-url'), 'android_url' => Input::get('android-url'), 'video_url' => Input::get('video-url'), 'text' => Input::get('message'), 'offer_title' => Input::get('offer-title'), 'offer_desc' => Input::get('offer-desc'), 'social_offer' => $social_offer, 'social_network' => $social_network, 'offer_terms' => Input::get('offer-terms'), 'offer_limit' => Input::get('offer-limit'), 'social_post_type' => Input::get('social-post-type'), 'offer_sendmail' => $offer_email, 'offer_sendsms' => $offer_sms, 'offer_email_message' => Input::get('offer-email-message'), 'offer_sms_message' => Input::get('offer-sms-message'),'offer_expire_date' => Input::get('offer-expir-date'), 'day_parting' => Input::get('day-parting') == 'on' ? '1' : '0', 'day_parting_start' => Input::get('day-parting-start'), 'day_parting_end' => Input::get('day-parting-end'), 'days' => $days, 'network_id' => $networks, 'branch_id' => $branches, 'group_id' => $groups]
+            );
+
+        }
+
+        //Upload Background Pic
+            if ($request->hasFile('file')) {
+                $file = Input::file('file');
+                App\Media::where(['campaign_id'=> $id, 'type'=>'campaigns'])->delete();
+                foreach ($file as $value) {
+                        $name = date('Y-m-d-H:i:s') . "-" . $value->getClientOriginalName();
+                        $value->move(public_path() . '/upload/campaigns/', $name);
+                        App\Media::insert(
+                            ['campaign_id' => $id, 'file' => $name, 'type' => 'campaigns']
+                        );
+                        
+                }
+
+            }
+        return redirect()->back();
+
+    }
+
+    public function Delete($id)
+    {
+        Campaigns::where('id', $id)->delete();
+        App\Media::where('campaign_id', $id, 'type', 'campaigns')->delete();
+    }
+
+    public function delete_survey_option($id)
+    {
+        Survey::where('id', $id)->delete();
+        return redirect()->back();
+    }
+
+    public function poll($id)
+    {
+        return view('back-end.campaign.poll', ['poll' => Survey::where('campaign_id', $id)->whereNull('u_id')->get()]);
+    }
+
+    public function campaign_offline(Request $request)
+    {
+        //////////////////  First step 1 : find how is campaign will apply ///////////////////
+        $campaign = App\Models\Campaigns::where('state', '1')->get();
+
+        if (isset($campaign) && count($campaign) != 0) {
+            
+            foreach ($campaign as $curr_campaign) {
+                $start_date_campaign = $curr_campaign->startdate;
+                $end_date_campaign = $curr_campaign->enddate;
+                $datetimenow = \Carbon\Carbon::now()->format('Y-m-d');
+                if (isset($end_date_campaign) && $end_date_campaign != Null) {// have start and end data
+                    
+                    if ($datetimenow >= $start_date_campaign && $datetimenow <= $end_date_campaign) {
+                        $passedStep1 = 1;
+                    }
+
+                } elseif (isset($start_date_campaign) && $start_date_campaign != Null) { //have start date onley
+                    if ($datetimenow >= $start_date_campaign) {
+                        $passedStep1 = 1;
+                    }
+                }
+
+                /////////////////////////  step2 : day parting ///////////////////////
+
+                if (isset($passedStep1) && $passedStep1 == 1) {
+                    
+                    if (isset($curr_campaign->day_parting) && $curr_campaign->day_parting == 1) {
+                        $start_parting_time = $curr_campaign->day_parting_start;
+                        $end_parting_time = $curr_campaign->day_parting_end;
+
+                        $todayName = date('l');
+
+                        if (isset($curr_campaign->days) && $curr_campaign->days != "") {
+                            $days = explode(',', $curr_campaign->days);
+                            $justCounter = 1;
+                            foreach ($days as $day) {
+
+                                if ($day == 'sun') {
+                                    $avilableDays[$justCounter] = "Sunday";
+                                }
+                                if ($day == 'mon') {
+                                    $avilableDays[$justCounter] = "Monday";
+                                }
+                                if ($day == 'tue') {
+                                    $avilableDays[$justCounter] = "Tuesday";
+                                }
+                                if ($day == 'wed') {
+                                    $avilableDays[$justCounter] = "Wednesday";
+                                }
+                                if ($day == 'thu') {
+                                    $avilableDays[$justCounter] = "Thursday";
+                                }
+                                if ($day == 'fri') {
+                                    $avilableDays[$justCounter] = "Friday";
+                                }
+                                if ($day == 'sat') {
+                                    $avilableDays[$justCounter] = "Saturday";
+                                }
+                                $justCounter++;
+                            }
+                            if (isset($avilableDays)) {
+                                $avilableDaysCount = count($avilableDays);
+
+                                for ($i = 1; $i <= $avilableDaysCount; $i++) {
+                                    if ($todayName == $avilableDays[$i]) {
+
+                                        if (isset($start_parting_time) && isset($end_parting_time)) {
+                                            //return date('H:i:s');
+                                            if ( (date('H:i:s') >= $start_parting_time && date('H:i:s') <= $end_parting_time) or ($start_parting_time == "00:00:00" && $end_parting_time == "00:00:00")) {
+                                                $passedStep2 = 1;
+                                                //$activeCampaignID = $curr_campaign->id;
+                                                break;
+                                            }
+                                        } else {
+                                            $passedStep2 = 1;
+                                        }
+
+                                    }
+                                }
+                            }
+
+                        }
+
+                    } else {
+                        $passedStep2 = 1;
+                        //$activeCampaignID = $curr_campaign->id;
+                    }
+
+                    // step 3
+                    if (isset($passedStep2) and $passedStep2 == 1) {
+                        
+                        $user_data = App\Users::where('u_id', session('login')[0]['id'])->first();
+                        if (isset($campaign->network_id)) {
+                            $network_split = explode(',', $campaign->network_id);
+                            foreach ($network_split as $network_value) {
+                                if ($network_value == $user_data->network_id) {
+                                    $found_network = 1;
+                                }
+                            }
+                        } else {
+                            $found_network = 1;
+                        }
+                        if (isset($campaign->group_id)) {
+                            $group_split = explode(',', $campaign->group_id);
+                            foreach ($group_split as $group_value) {
+                                if ($group_value == $user_data->group_id) {
+                                    $found_group = 1;
+                                }
+                            }
+                        } else {
+                            $found_group = 1;
+                        }
+                        if (isset($campaign->branch_id)) {
+                            $branch_split = explode(',', $campaign->branch_id);
+                            foreach ($branch_split as $branch_value) {
+                                if ($branch_value == $user_data->branch_id) {
+                                    $found_branch = 1;
+                                }
+                            }
+                        } else {
+                            $found_branch = 1;
+                        }
+
+                        if (isset($found_network) && isset($found_branch) && isset($found_group)) {
+                            $activeCampaignID = $curr_campaign->id;
+                        }
+                    }
+
+
+                }// end step 1  if (isset($passedStep1) && $passedStep1 == 1)
+            }//endforeach
+        }//if(isset($campaign) && count($campaign) != 0)
+
+        /////////////////////////  Final Step ///////////////////////
+        if (!isset($activeCampaignID)) {// not found valid campaign right now.
+            return redirect()->route('account');
+        } else {// founded campaign ID
+            $campaign = App\Models\Campaigns::where('id', $activeCampaignID)->first();
+            $dt = Carbon::now();
+            $id = session('login')[0]['id'];
+            Campaigns::where('id', $activeCampaignID)->increment('views_count');
+            
+            History::insert(
+                ['type1' => 'hotspot', 'type2' => 'Admin', 'operation' => 'campaigns_views', 'details' => $activeCampaignID, 'notes' => 'campaigns', 'add_date' => $dt->toDateString(), 'add_time' => $dt->toTimeString()]
+            );
+            
+            $check_reach = CampaignStatistics::where(['u_id' =>  $id, 'campaign_id' => $activeCampaignID , 'type' => 'reach'])->first();
+            $check_offer = CampaignStatistics::where(['u_id' =>  $id, 'campaign_id' => $activeCampaignID , 'type' => 'offer'])->first();
+            $offer_counter=App\Models\CampaignStatistics::where(['campaign_id' => $activeCampaignID, 'type' => 'offer'])->count();
+            $survey_count=App\Models\Survey::where(['u_id' =>  $id, 'campaign_id' => $activeCampaignID])->count();
+
+            if (isset($check_reach) && $check_reach->u_id == $id && $check_reach->campaign_id == $activeCampaignID) {
+                // user already seen before
+            } else {
+                CampaignStatistics::insert(['campaign_id' => $activeCampaignID, 'u_id' => $id, 'type' => 'reach','created_at' => \Carbon\Carbon::now()]);
+            }
+ 
+            // check if campaign type offer and offer limit has been reached 
+            if($campaign->type == "offer" && $offer_counter >= $campaign->offer_limit){
+                return redirect()->route('account');
+            }
+
+            // check if user take offer before
+            if ($campaign->type == "offer" && count($check_offer) > 0) { 
+                    // so user did not have offer record
+                    return redirect()->route('account');
+            }else{$canLogin=1;}
+            
+            //check if user fill survey before
+            if ($campaign->type == "survey" && $survey_count > 0) { 
+                    // so user did not have offer record
+                    return redirect()->route('account');
+            }else{$canLogin=1;}
+
+            if(isset ($canLogin) and $canLogin==1){
+
+                // type : social offer
+                if ($campaign->type == "offer" && $campaign->social_offer == 1) {
+                    // check if user take offer before or not
+                    // not working but I well leave it for last check  
+                    if ((isset($request->campaign) && $request->campaign == $activeCampaignID) && (isset($request->u_id) && $request->u_id = $id)) {
+                        return view('back-end.campaign.preview', ['campaign' => $campaign, 'userid' => $id, 'share'=>'100']);  
+                    }else{   
+                        return view('back-end.campaign.social', ['campaign' => $campaign, 'userid' => $id]);
+                        
+                    }
+                // type : landing   
+                } elseif ($campaign->type == "landing") {
+                    return Redirect::to($campaign->url);
+                // type : other    
+                } else {
+                    //return $request->campaign;
+
+                    if ($request->campaign == $activeCampaignID && $request->u_id = $id) {
+                        return view('back-end.campaign.preview', ['campaign' => $campaign, 'userid' => $id]);
+                    } else {
+                        return view('back-end.campaign.preview', ['campaign' => $campaign, 'userid' => $id]);
+                    }
+                    //return redirect()->back();
+                }
+            
+            }// End else if user already taked any type "ofer" or "survey"
+
+            //if user didnt reach ti any thing in above conditions, will redirected to user panel
+            return redirect()->route('account');
+        }
+
+    }
+
+    public function state($id, $value)
+    {
+        $value = ($value == 'true') ? 1 : 0;
+        Campaigns::where('id', '=', $id)->update(['state' => $value]);
+    }
+
+    //return view('back-end.campaign.preview', ['campaign' =>  $campaign]);
+
+
+    public function preview($id)
+    {
+        if (isset($id)) {
+            $campaign = App\Models\Campaigns::where('id', $id)->first();
+
+            if ($campaign->type == "landing") {
+                return Redirect::to($campaign->url);
+            }
+            return view('back-end.campaign.preview', ['campaign' => $campaign]);
+        } else {
+            return view('erorrs.404');
+        }
+    }
+
+    public function campaign_click($id, $userid, $type = Null)
+    {
+        $dt = Carbon::now();
+        Campaigns::where('id', $id)->increment('clicks_count');
+        History::insert(
+            ['type1' => 'hotspot', 'type2' => 'Admin', 'operation' => 'campaigns_clicks', 'details' => $id, 'notes' => 'campaigns','add_date' => $dt->toDateString(), 'add_time' => $dt->toTimeString()]
+        );
+        $user = App\Users::where('u_id', $userid)->first();
+
+        $check_reach = CampaignStatistics::where(['u_id' =>  $userid, 'campaign_id' => $id , 'type' => 'reach'])->first();
+
+        $tokens = rand(1, 9999) . chr(rand(65, 90)) . rand(1111, 5555) . chr(rand(65, 90)) . rand(2222, 6666) . chr(rand(65, 90)) . rand(3333, 7777) . rand(4444, 8888) . rand(5555, 9999) . chr(rand(65, 90));
+
+        if (App\Users::where('u_id', $userid)->update(['token' => $tokens])) {
+            $username = $user->username;
+            print "<iframe src=\"http://internet.microsystem.com.eg/login?username=$username&password=$tokens\" ></iframe>";
+            //sleep(10);
+        }
+
+        if ($check_reach->u_id == $userid && $check_reach->campaign_id == $id) {
+            // user already seen before
+        } else {
+            CampaignStatistics::insert(['campaign_id' => $id, 'u_id' => $userid, 'type' => 'reach','created_at' => \Carbon\Carbon::now()]);
+        }
+        $campaign = Campaigns::where('id', $id)->first();
+        if(isset($campaign->url)) {
+            Session::push('campaign_url', $campaign->url);
+        }
+
+        if ($type == "account") {
+            return redirect()->route('account');
+        }else if ($type == "ios") {
+            Session::push('ios_url', $campaign->ios_url);
+            return redirect()->route('account');
+
+        }else if ($type == "android") {
+            Session::push('android_url', $campaign->android_url);
+            return redirect()->route('account');
+        } else {
+            return redirect()->route('account');
+        }
+
+
+    }
+
+    public function survey_vote(Request $request)
+    {   
+        $dt = Carbon::now();
+        $url = Campaigns::where('id', $request->campaign)->value('url');
+        Campaigns::where('id', $request->campaign)->increment('clicks_count');
+        History::insert(
+            ['type1' => 'hotspot', 'type2' => 'Admin', 'operation' => 'campaigns_clicks', 'details' => $request->campaign,  'notes' => 'campaigns', 'add_date' => $dt->toDateString(), 'add_time' => $dt->toTimeString()]
+        );
+        $check_reach = CampaignStatistics::where(['u_id' =>  $request->userid, 'campaign_id' => $request->campaign , 'type' => 'reach'])->first();
+
+        if ($check_reach->u_id == $request->userid && $check_reach->campaign_id == $request->campaign) {
+            // user already seen before
+        } else {
+            CampaignStatistics::insert(['campaign_id' => $request->campaign, 'u_id' => $request->userid,'type' => 'reach' ,'created_at' => \Carbon\Carbon::now()]);
+        }
+        if($request->type == "poll") {
+            if (App\Models\Survey::where(['u_id' => $request->userid])->value('u_id') == $request->userid) {
+                if (isset($url)) {
+                    Session::push('campaign_url', $url);
+                    return redirect()->route('account');
+                } else {
+                    return redirect()->route('account');
+                }
+            } else {
+                App\Models\Survey::insert([
+                    'options' => $request->option, 'campaign_id' => $request->campaign, 'u_id' => $request->userid, 'created_at' => $dt->toDateString()
+                ]);
+
+                History::insert(
+                    ['type1' => 'hotspot', 'type2' => $request->option, 'operation' => 'campaigns_survey_poll', 'details' => $request->campaign, 'u_id' => $request->userid, 'notes' => 'campaigns', 'add_date' => $dt->toDateString(), 'add_time' => $dt->toTimeString()]
+                );
+                if (isset($url)) {
+                   Session::push('campaign_url', $url);
+                    return redirect()->route('account');
+                } else {
+                    return redirect()->route('account');
+                }
+
+            }
+        }else{
+            if (App\Models\Survey::where(['u_id' => $request->userid])->value('u_id') == $request->userid) {
+                if (isset($url)) {
+                    Session::push('campaign_url', $url);
+                    return redirect()->route('account');
+                } else {
+                    return redirect()->route('account');
+                }
+            } else {
+
+                App\Models\Survey::insert([
+                    'options' => $request->rating, 'campaign_id' => $request->campaign, 'u_id' => $request->userid, 'created_at' => $dt->toDateString()
+                ]);
+
+                History::insert(
+                    ['type1' => 'hotspot', 'type2' => $request->rating, 'operation' => 'campaigns_survey_rating', 'details' => $request->campaign, 'u_id' => $request->userid, 'notes' => 'campaigns', 'add_date' => $dt->toDateString(), 'add_time' => $dt->toTimeString()]
+                );
+                if (isset($url)) {
+                    Session::push('campaign_url', $url);
+                    return redirect()->route('account');
+                } else {
+                    return redirect()->route('account');
+                }
+
+            }
+        }
+    }
+
+    public function get_offer(Request $request)
+    {
+        $dt = Carbon::now();
+        $user = App\Users::where('u_id', $request->userid)->first();
+        $campaign = Campaigns::where('id', $request->campaignid)->first();
+        Campaigns::where('id', $request->campaignid)->increment('clicks_count');
+        History::insert(
+            ['type1' => 'hotspot', 'type2' => 'Admin', 'operation' => 'campaigns_clicks', 'details' => $request->campaignid, 'notes' => 'campaigns', 'add_date' => $dt->toDateString(), 'add_time' => $dt->toTimeString()]
+        );
+        $offer_code = rand(111111,999999);
+        if(CampaignStatistics::where('offer_code', $offer_code)->count() > 0)
+        {
+            $offer_code = rand(121121,999999);
+        }
+
+        if( CampaignStatistics::where(['campaign_id' => $request->campaignid, 'u_id' => $request->userid,'type' => 'offer'])->count() > 0) {
+
+        }else{
+            CampaignStatistics::insert(['campaign_id' => $request->campaignid, 'u_id' => $request->userid,'type' => 'offer', 'offer_code' => $offer_code , 'state' => '0' ,'created_at' => \Carbon\Carbon::now()]);
+        }
+
+        if ($campaign->offer_sendsms == 1) {
+            
+            if (isset($request->phone) && count($user) != 0) {
+                $message = $campaign->offer_sms_message.', Offer code:'.$offer_code;
+                $sendmessage = new App\Http\Controllers\Integrations\SMS();
+
+                $sendmessage->send($request->countrycode.$request->phone, $message);
+
+            } else {
+                return redirect()->back();
+            }
+        }
+         
+        if(isset($request->email))
+        {
+            if (strpos($campaign->offer_sendmail, '@') !== false and strpos($campaign->offer_sendmail, '.') !== false) {
+                $validEmail=1;
+            }else{$validEmail=0;}
+
+        }else{$validEmail=0;}
+
+        if ($campaign->offer_sendmail == 1 and $validEmail==1) {
+            
+            if (isset($request->email) && count($user) != 0) {
+
+                if (App\Settings::where('type', 'email')->value('value')) {
+
+                    $from = App\Settings::where('type', 'email')->value('value');
+                } else {
+                    $from = $request->email;
+                }
+                $to = $request->email;
+                $subject = $campaign->campaign_name . ' Offer code';
+                
+                  Mail::send('emails.offer', ['title' => $subject, 'offer_code' => $offer_code, 'messageContent' => $campaign->offer_email_message, 'offerTitle' => $campaign->offer_title, 'offerDescription' => $campaign->offer_desc, 'userid' => $request->userid, 'campaign_id' => $request->campaignid], function ($message) use ($user,$to ,$from, $subject) {
+                    $message->from($from, App\Settings::where('type', 'app_name')->value('value'));
+                    $message->to($to, $user->u_name)->subject($subject);
+                });
+                
+            } else {
+                return redirect()->back();
+            }
+        }
+
+        if(isset($campaign->url)){
+            Session::push('campaign_url', $campaign->url);
+            return redirect()->route('account');
+            //return Redirect::to($campaign->url);
+        }else{
+            return redirect()->route('account');
+        }
+
+    }
+
+    public function offers($id){
+        $offers =  CampaignStatistics::where(['campaign_id' => $id, 'type' => 'offer'])->get();
+
+        if(count($offers) != 0 ){
+            return view('back-end.campaign.offers', ['offers' => $offers]);
+        }else{
+            return "<div class=\"alert alert-danger no-border\">
+                    <button type=\"button\" class=\"close\" data-dismiss=\"alert\"><span>&times;</span><span class=\"sr-only\">Close</span></button>
+                    <span class=\"text-semibold\">Oops!</span> This campaign does not have any submitted offer</a>.
+                </div>";
+        }
+    }
+    public function offer_state($id, $value){
+
+        $value = ($value == 'true') ? 1 : 0;
+       return CampaignStatistics::where('id', '=', $id)->update(['state' => $value, 'a_id' => Auth::user()->id]);
+    }
+
+    public function Specialoffer($id,$campaign,$offercode){
+
+        return view('back-end.campaign.signupoffer', ['id' => $id, 'campaign' => $campaign]);
+    }
+    public function signupoffer(Request $request){
+        $dt = Carbon::now();
+        $referral_user =  CampaignStatistics::where(['u_id' => $request->user_id, 'campaign_id' => $request->campaign_id])->first();
+        $campaign = Campaigns::where('id', $request->campaign_id)->first();
+        Campaigns::where('id', $request->campaign_id)->increment('clicks_count');
+        History::insert(
+            ['type1' => 'hotspot', 'type2' => 'Admin', 'operation' => 'campaigns_clicks', 'details' => $request->campaign_id, 'notes' => 'campaigns', 'add_date' => $dt->toDateString(), 'add_time' => $dt->toTimeString()]
+        );
+
+        if(isset($referral_user) && count($referral_user) != 0) {
+            $offer_code = rand(111111,999999);
+            if(CampaignStatistics::where('offer_code', $offer_code)->count() > 0)
+            {
+                $offer_code = rand(121121,999999);
+            }
+
+            $password = $request->password;
+            if(strlen($request->mobile)==10){$mobile="0".$request->mobile;}else{$mobile=$request->mobile;}
+            $phone = $request->countrycode . $mobile;
+            $insert = App\Users::insertGetId([
+                'u_name' => $request->username, 'u_uname' => $request->fullname, 'u_password' => $password, 'u_phone' => $phone, 'u_email' => $request->email
+            ]);
+            CampaignStatistics::Insert([
+                'u_id' => $insert, 'campaign_id' => $request->campaign_id, 'state' => '0', 'type' => 'offer', 'offer_code' => $offer_code, 'created_at' => \Carbon\Carbon::now(), 'referral_code' => $request->user_id
+            ]);
+
+            if ($campaign->offer_sendsms == 1) {
+
+                if (isset($phone) && count($insert) != 0) {
+
+                    $message = $campaign->offer_sms_message.', Offer code:'.$offer_code;
+                    $sendmessage = new App\Http\Controllers\Integrations\SMS();
+
+                    $sendmessage->send($phone, $message);
+
+                    if(isset($campaign->url)){
+                        //return Redirect::to($campaign->url);
+                        Session::push('campaign_url', $campaign->url);
+                        return redirect()->route('account');
+                    }else{
+                        return redirect()->route('account');
+                    }
+                } else {
+                    return redirect()->back();
+                }
+            }
+
+
+        if(isset($request->email))
+        {
+            if (strpos($campaign->offer_sendmail, '@') !== false and strpos($campaign->offer_sendmail, '.') !== false) {
+                $validEmail=1;
+            }else{$validEmail=0;}
+            
+        }else{$validEmail=0;}
+            
+            if ($campaign->offer_sendmail == 1 and $validEmail==1) {
+                    
+                if (isset($request->email) && count($insert) != 0) {
+
+                    if (App\Settings::where('type', 'email')->value('value')) {
+
+                        $from = App\Settings::where('type', 'email')->value('value');
+                    } else {
+                        $from = $request->email;
+                    }
+                    $to = $request->email;
+                    $subject = $campaign->campaign_name . ' Offer code';
+
+                    Mail::send('emails.offer', ['title' => $subject, 'offer_code' => $offer_code, 'message' => $campaign->offer_email_message, 'userid' => $request->userid], function ($message) use ($insert,$to, $from, $subject) {
+                        $message->from($from, App\Settings::where('type', 'app_name')->value('value'));
+                        $message->to($to, $insert->u_name)->subject($subject);
+                    });
+                    if(isset($campaign->url)){
+                        //return Redirect::to($campaign->url);
+                        Session::push('campaign_url', $campaign->url);
+                        return redirect()->route('account');
+                    }else{
+                        return redirect()->route('account');
+                    }
+                } else {
+                    return redirect()->back();
+                }
+            }
+
+        }
+
+    }
+
+
+}

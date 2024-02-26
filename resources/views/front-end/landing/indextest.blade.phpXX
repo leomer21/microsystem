@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}" />
+    <link rel="shortcut icon" href="{{ asset('/') }}upload/photo/faviconlogosmall.ico" type="image/x-icon" />
+
+    <title>{{ App\Settings::where('type', 'app_name')->value('value') }} - WiFi / Internet Landing page</title>
+    
+    <!-- Global stylesheets -->
+    <!--<link href="https://fonts.googleapis.com/css?family=Roboto:400,300,100,500,700,900" rel="stylesheet" type="text/css">-->
+    <link href="{{ asset('/') }}assets/css/icons/icomoon/styles.css" rel="stylesheet" type="text/css">
+    <link href="{{ asset('/') }}assets/css/bootstrap.css" rel="stylesheet" type="text/css">
+    <link href="{{ asset('/') }}assets/css/core.css" rel="stylesheet" type="text/css">
+    <link href="{{ asset('/') }}assets/css/components.css" rel="stylesheet" type="text/css">
+    <link href="{{ asset('/') }}assets/css/colors.css" rel="stylesheet" type="text/css">
+    <link href="{{ asset('/') }}assets/css/extras/animate.min.css" rel="stylesheet" type="text/css">
+    <link href="{{ asset('/') }}landing/css/jquery.vegas.css" rel="stylesheet"><!-- Banner BG -->
+
+    <!-- /global stylesheets -->
+
+    <!-- Core JS files -->
+    <script type="text/javascript" src="{{ asset('/') }}assets/js/plugins/loaders/pace.min.js"></script>
+    <script type="text/javascript" src="{{ asset('/') }}assets/js/core/libraries/jquery.min.js"></script>
+    <script type="text/javascript" src="{{ asset('/') }}assets/js/core/libraries/bootstrap.min.js"></script>
+    <script type="text/javascript" src="{{ asset('/') }}assets/js/plugins/loaders/blockui.min.js"></script>
+    <!-- /core JS files -->
+
+    <!-- Theme JS files -->
+    <script type="text/javascript" src="{{ asset('/') }}assets/js/plugins/forms/styling/uniform.min.js"></script>
+    <script type="text/javascript" src="{{ asset('/') }}assets/js/plugins/forms/selects/bootstrap_select.min.js"></script>
+    <script type="text/javascript" src="{{ asset('/') }}assets/js/plugins/forms/selects/select2.min.js"></script>
+
+    <script type="text/javascript" src="{{ asset('/') }}assets/js/core/app.js"></script>
+    <script type="text/javascript" src="{{ asset('/') }}assets/js/pages/login.js"></script>
+    <script type="text/javascript" src="{{ asset('/') }}assets/js/pages/form_bootstrap_select.js"></script>
+    <script type="text/javascript" src="{{ asset('/') }}assets/js/plugins/forms/validation/validate.min.js"></script>
+    <script type="text/javascript" src="{{ asset('/') }}landing/js/jquery.flexslider.js"></script><!-- Flexslider JS -->
+    <script type="text/javascript" src="{{ asset('/') }}landing/js/jquery.vegas.js"></script><!-- For Banner Slider JS -->
+    <script type="text/javascript" src="{{ asset('/') }}assets/js/plugins/forms/validation/validate.min.js"></script>
+    @if(App\Settings::where('type', 'Accountkitappid')->value('state') == 1)
+        <!--<-script type="text/javascript" src="{{ asset('/') }}assets/js/sdk.js"></script> -->
+        <!-- Turned of in 1.1.2017 after remove javascript from accountkit integration  -->
+        <!-- <script src="https://sdk.accountkit.com/en_US/sdk.js"></script> -->
+    @endif
+
+
+    <!-- /theme JS files -->
+</head>
+<body class="login-container">
+
+<!-- Main navbar -->
+<div class="navbar navbar-inverse">
+    <div class="navbar-header">
+        <a class="navbar-brand" href=""><img src="{{ asset('/') }}upload/{{ App\Settings::where('type','logo')->value('value') }}"></a>
+    </div>
+</div>
+<!-- /main navbar -->
+
+
+<!-- Page container -->
+<div class="page-container">
+
+    <!-- Page content -->
+    <div class="page-content">
+
+        <!-- Main content -->
+        <div class="content-wrapper">
+
+            <!-- Content area -->
+            <div class="content">
+               @include('..front-end.landing.authtest') 
+                <!-- Footer -->
+                <div class="footer text-muted text-center panel panel-body" style=" background-color: rgba(51, 51, 51, 0.8);  border: 0px solid transparent;">
+                    <!--<div class="icon-object border-slate-300 text-slate-300" data-toggle="modal" data-target="#modal_form_vertical"><i class="icon-users"></i></div>-->
+                    <!--<h2 class="content-group" data-toggle="modal" data-target="#modal_form_vertical" style="color: #ffffff">Login by the following options
+                        <small class="display-block" style="color: #ffffff"></small>
+                    </h2>-->
+                    <p><button type="button" class="btn btn-danger btn-rounded btn-labeled btn-xlg" data-toggle="modal" data-target="#modal_form_vertical"><b><i class="icon-connection"></i></b> CLICK HERE FOR WiFi</button></p>
+                    <div class="row">
+
+                        @if(App\Settings::where('type', 'google_client_id')->value('state') == 1) <a class="btn btn-danger btn-labeled" href="{{ url('authtest/google') }}"><b><i class="icon-google"></i></b> Sign in with Google</a> @else @endif
+                        @if(App\Settings::where('type', 'twitter_client_id')->value('state') == 1)<a class="btn btn-info btn-labeled" href="{{ url('authtest/twitter') }}"><b><i class="icon-twitter"></i></b> Sign in with Twitter</a> @else @endif
+                        <p></p>
+                        @if(App\Settings::where('type', 'facebook_client_id')->value('state') == 1)<a class="btn btn-primary btn-labeled" href="{{ url('authtest/facebook') }}"><b><i class="icon-facebook"></i></b> Sign in with Facebook</a> @else @endif
+                        @if(App\Settings::where('type', 'linkedin_client_id')->value('state') == 1)<a class="btn bg-blue-800 btn-labeled" href="{{ url('authtest/linkedin') }}"><b><i class="icon-linkedin"></i></b> Sign in with Linkedin</a> @else @endif
+                    </div>
+                </div>
+                <!-- /footer -->
+                @include('..back-end.footer')
+
+
+            </div>
+            <!-- /content area -->
+
+        </div>
+        <!-- /main content -->
+
+    </div>
+    <!-- /page content -->
+
+</div>
+<!-- /page container -->
+<script>
+@if(App\Settings::where('type', 'Accountkitappid')->value('state') == 1)
+	$('#form').on('keyup keypress', function(e) {
+	  var keyCode = e.keyCode || e.which;
+	  if (keyCode === 13) { 
+	    e.preventDefault();
+	    return false;
+	  }
+	});
+    // initialize Account Kit with CSRF protection
+    AccountKit_OnInteractive = function() {
+        AccountKit.init({
+            appId: '{{ App\Settings::where('type', 'Accountkitappid')->value('value') }}',
+            state: '{{ csrf_token() }}',
+            version: 'v1.1',
+            debug:true
+        });
+    };
+
+    function loginCallback(response) {
+        console.log(response);
+
+        if (response.status === "PARTIALLY_AUTHENTICATED") {
+            document.getElementById('code').value = response.code;
+            {{ csrf_token() }} = response.state;
+            document.getElementById('form').submit();
+        }
+
+        else if (response.status === "NOT_AUTHENTICATED") {
+            // handle authentication failure
+            alert('Registration has been canceled.');
+        }
+        else if (response.status === "BAD_PARAMS") {
+            // handle bad parameters
+            alert('Please enter correct mobile number.');
+        }
+    }
+
+    function smsLogin() {
+        var countryCode = document.getElementById('country').value;
+        var phoneNumber = document.getElementById('phone').value;
+        //console.log("+"+countryCode,phoneNumber)
+        AccountKit.login(
+                'PHONE',
+                {countryCode: "+"+countryCode, phoneNumber: phoneNumber},
+                loginCallback
+        );
+    }
+    @endif
+    function isNumber(evt) {
+        evt = (evt) ? evt : window.event;
+        var charCode = (evt.which) ? evt.which : evt.keyCode;
+        if (charCode > 31 && (charCode < 48 || charCode > 57)) {
+            return false;
+        }
+        return true;
+    }
+    $(window).load(function () {
+        $("#loader").fadeOut();
+        $("#mask").delay(1000).fadeOut("slow");
+    });
+
+    //Adding fixed position to header
+    $(document).scroll(function () {
+        if ($(document).scrollTop() >= 10000) {
+            $('.navbar').addClass('navbar-fixed-top');
+            $('html').addClass('has-fixed-nav');
+        } else {
+            $('.navbar').removeClass('navbar-fixed-top');
+            $('html').removeClass('has-fixed-nav');
+        }
+    });
+
+    // ---------- Header Slideshow ----------
+
+    $(function () {
+        $.vegas('slideshow', {
+            backgrounds: [
+                @foreach(App\Media::where('template', 'default')->get() as $img)
+                {
+                    src: '{{ asset('/upload/media/'.$img->file) }}', fade: 1000
+                },
+                @endforeach
+            ]
+        })
+    });
+
+
+    // ---------- Flexslider Script ----------
+    $('.flexslider').flexslider({
+        animation: "fade",
+        start: function (slider) {
+            $('body').removeClass('loading');
+        }
+    });
+
+    // Checkboxes
+    $(".styled").uniform({
+        radioClass: 'choice'
+    });
+    $('.select-fixed-single').select2({
+        minimumResultsForSearch: Infinity,
+
+    });
+    $( ".signup" ).change(function() {
+   	
+        /*if ( $("#usernamevalid").val() == 1 && $("#phonevalid").val() == 1) {
+            $("#signup").prop("disabled",false);
+        }else{
+            $("#signup").prop("disabled",true);
+        }*/
+    });
+    $("#username").change(function(){
+        var username = $("#username").val();
+        var CSRF_TOKEN = $('meta[name="csrf-token"]').attr('content');
+
+        $.ajax({
+            type:"post",
+            url:"{{ url('validation/username') }}",
+            data:{_token: CSRF_TOKEN, username:username},
+            success:function(data){
+                if(data > 0){
+                    $('.basic-error-username').show();
+                    $('#usernamevalid').val("0");
+                    $('.basic-error-username').text("Sorry! Username already exist.");
+                }
+                else{
+                    $('.basic-error-username').hide();
+                    $('#usernamevalid').val("1");
+                    $('.basic-error-username').removeClass('validation-error-label validation-valid-label');
+                }
+
+            }
+        });
+    });
+    $("#email").change(function(){
+        var email = $("#email").val();
+        var CSRF_TOKEN = $('meta[name="csrf-token"]').attr('content');
+
+        $.ajax({
+            type:"post",
+            url:"{{ url('validation/email') }}",
+            data:{_token: CSRF_TOKEN, email:email},
+            success:function(data){
+                if(data > 0){
+                    $('.basic-error-email').show();
+                    $('.basic-error-email').text("Sorry! Email already exist.");
+                }
+                else{
+                    $('.basic-error-email').hide();
+                    $('.basic-error-email').removeClass('validation-error-label validation-valid-label');
+                }
+            }
+        });
+    });
+    $("#phone").change(function(){
+        var mobile = $("#phone").val();
+        var countrycode = $("#countrycode").val();
+        var phone=countrycode.concat(mobile);
+        var CSRF_TOKEN = $('meta[name="csrf-token"]').attr('content');
+        if (countrycode == 2 && mobile.length < 11) {
+                    $('.basic-error-phone').show();
+                    $('.basic-error-phone').text("Please enter full mobile number");
+        }else{
+            $.ajax({
+                type:"post",
+                url:"{{ url('validation/phone') }}",
+                data:{_token: CSRF_TOKEN, phone:phone},
+                success:function(data){
+
+                                    
+                    if(data > 0){
+                        $('.basic-error-phone').show();
+                        $('#phonevalid').val("0");
+                        $('.basic-error-phone').text("Sorry! Mobile already exist.");
+                    }
+                    else{
+                        $('.basic-error-phone').hide();
+                        $('#phonevalid').val("1");
+                        $('.basic-error-phone').removeClass('validation-error-label validation-valid-label');
+                    }
+                }
+            });
+        }
+    });
+    @if(isset($errorMessage))
+		$(window).load(function(){
+        $('#modal_form_vertical').modal('show');
+    });
+    @endif
+
+    @if(isset($smsConfirm) && $smsConfirm == 1)
+         $(window).load(function(){
+        $('#modal_form_vertical').modal('show');
+    });
+    @endif
+
+    @if(isset($successfullRegistration) && $successfullRegistration == 1)
+        $(window).load(function(){
+        $('#modal_form_vertical').modal('show');
+    });
+    @endif
+    @if(isset($contact_system_administrator))
+         $(window).load(function(){
+        $('#modal_form_vertical').modal('show');
+    });
+    @endif
+    @if(isset($loginAfterWaitingAdminConfirm))
+         $(window).load(function(){
+        $('#modal_form_vertical').modal('show');
+    });
+    @endif
+
+    @if(isset($confirm_error) && $confirm_error == 1)
+        $(window).load(function(){
+        $('#modal_form_vertical').modal('show');
+    });
+    @endif
+
+    @if(isset($phone_error) &&  $phone_error == 1)
+         $(window).load(function(){
+        $('#modal_form_vertical').modal('show');
+    });
+    @endif
+     @if(isset($user_exist) &&  $user_exist == 1)
+        $(window).load(function(){
+        $('#modal_form_vertical').modal('show');
+        $('#tab2').modal('show');
+        //$('#tab1').modal('hide');
+    });
+    @endif
+     @if(isset($send_code) &&  $send_code == 1)
+          $(window).load(function(){
+        $('#modal_form_vertical').modal('show');
+    });
+    @endif
+    @if(isset($forget) &&  $forget == 1)
+         $(window).load(function(){
+        $('#modal_form_vertical').modal('show');
+    });
+    @endif
+    @if(isset($reset) &&  $reset == 1)
+         $(window).load(function(){
+        $('#modal_form_vertical').modal('show');
+    });
+    @endif
+    @if(isset($mailsend) &&  $mailsend == 0)
+         $(window).load(function(){
+        $('#modal_form_vertical').modal('show');
+    });
+    @endif
+
+    @if(isset($mailsend) &&  $mailsend == 1)
+         $(window).load(function(){
+        $('#modal_form_vertical').modal('show');
+    });
+    @endif
+    
+    @if(isset($mobile_exist) &&  $mobile_exist == 1)
+   	$(window).load(function(){
+        $('#modal_form_vertical').modal('show');
+    });
+    @endif
+
+    @if(isset($email_exist) &&  $email_exist == 1)
+         $(window).load(function(){
+        $('#modal_form_vertical').modal('show');
+    });
+    @endif
+
+    @if(isset($signup_step2) &&  $signup_step2 == 1)
+         $(window).load(function(){
+        $('#modal_form_vertical').modal('show');
+    });
+    @endif
+
+    @if(App\Settings::where('type','alwaysOpenPasswordLoginInUserCP')->value('state')==1 or Session::has('AccountkitFullMobile'))
+        $(window).load(function(){
+        $('#modal_form_vertical').modal('show');
+    });
+    @endif
+</script>
+</body>
+</html>
+

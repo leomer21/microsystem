@@ -1,0 +1,19 @@
+{
+  "name": "pmsintegration",
+  "version": "2.0.0",
+  "description": "PMS Interface Integration",
+  "main": "pms.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "pms",
+    "ontegration"
+  ],
+  "author": "Microsystem",
+  "license": "ISC",
+  "dependencies": {
+    "mysql": "^2.18.1",
+    "request": "^2.88.2"
+  }
+}

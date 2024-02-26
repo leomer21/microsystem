@@ -1,0 +1,119 @@
+// console.log(new Date().getFullYear().toString().substr(-2));
+// console.log(new Date().getMonth().toString());
+// console.log(new Date().getDay().toString());
+
+
+
+// function formatDate(d)
+// {
+//     //get the month
+//     var month = d.getMonth();
+//     //get the day
+//     //convert day to string
+//     var day = d.getDate().toString();
+//     //get the year
+//     var year = d.getFullYear();
+    
+//     //pull the last two digits of the year
+//     year = year.toString().substr(-2);
+    
+//     //increment month by 1 since it is 0 indexed
+//     //converts month to a string
+//     month = (month + 1).toString();
+
+//     //if month is 1-9 pad right with a 0 for two digits
+//     if (month.length === 1)
+//     {
+//         month = "0" + month;
+//     }
+
+//     //if day is between 1-9 pad right with a 0 for two digits
+//     if (day.length === 1)
+//     {
+//         day = "0" + day;
+//     }
+
+//     //return the string "MMddyy"
+//     return year + month + day;
+// }
+
+// var d = new Date();
+// console.log(formatDate(d));
+
+
+
+
+
+
+
+
+function timeNow() {
+    // return Date();
+    let nz_date_string = new Date().toLocaleString('en-eg', {timeZone: 'Africa/Cairo'}, {format: 'YYYY-MM-DD HH:mm'});
+    // Date object initialized from the above datetime string
+    let date_nz = new Date(nz_date_string);
+
+    // year as (YYYY) format
+    let year = date_nz.getFullYear().toString().substr(-2);
+    // month as (MM) format
+    let month = ("0" + (date_nz.getMonth() + 1)).slice(-2);
+
+    // date as (DD) format
+    let date = ("0" + date_nz.getDate()).slice(-2);
+
+    // hours as (HH) format
+    let hours = ("0" + date_nz.getHours()).slice(-2);
+
+    // minutes as (mm) format
+    let minutes = ("0" + date_nz.getMinutes()).slice(-2);
+
+    // seconds as (ss) format
+    let seconds = ("0" + date_nz.getSeconds()).slice(-2);
+
+    // date as YYYY-MM-DD format
+    let date_yyyy_mm_dd = year + "-" + month + "-" + date;
+    // console.log("Date in YYYY-MM-DD format: " + date_yyyy_mm_dd);
+
+    // time as hh:mm:ss format
+    let time_hh_mm_ss = hours + ":" + minutes + ":" + seconds;
+    // console.log("Time in hh:mm:ss format: " + time_hh_mm_ss);
+
+    // date and time as YYYY-MM-DD hh:mm:ss format
+    // let date_time = year + "-" + month + "-" + date + " " + hours + ":" + minutes + ":" + seconds;
+    // return date_time;
+
+    // let date_time = hours + minutes + seconds;
+    // return date_time;
+
+    let date_time = "DA" + year + month + date + "|TI" + hours + minutes + seconds;
+    return date_time;
+
+    // DA220609|TI144546
+
+};
+
+
+// console.log(timeNow());
+
+
+///////////////////////////////////////////////////////
+
+
+function splitStr(str) {
+      
+    // Function to split string
+    var string = str.split("|");
+      
+    return string;
+}
+  
+// Initialize string
+var str = "LA|DA220609|TI161950|";
+  
+var splited = str.split("|")[0];
+// console.log(splited);
+
+if( str.split("|")[0] == "LA" ){
+    console.log(splited);
+}
+

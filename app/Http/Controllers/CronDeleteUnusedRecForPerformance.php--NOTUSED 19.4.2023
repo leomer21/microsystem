@@ -1,0 +1,62 @@
+<?php
+namespace App\Http\Controllers;
+
+use App\Http\Requests;
+use Illuminate\Http\Request;
+use App;
+use Hash;
+use Session;
+use Input;
+use Validator;
+use Auth;
+use Redirect;
+use DB;
+use Carbon\Carbon;
+use Mail;
+use DateTime;
+
+class CronDeleteUnusedRecForPerformance extends Controller
+{
+    // OrangeTP daily at 4AM to decrease dashboard loading time
+    public function cron(Request $request){
+        
+        date_default_timezone_set("Africa/Cairo");
+        $today = date("Y-m-d");
+        $today_time = date("g:i a");
+        $created_at = date("Y-m-d H:i:s");
+        $currentHour = date("H");
+        $today_full24=$created_at;
+
+        // for test only\
+        // $allCustomers=DB::table('customers')->where('state','1')->groupBy('database')->get();
+        $allCustomers=DB::table('customers')->where('database','demo')->orWhere('database','7starsmall')->where('state','1')->groupBy('database')->get();
+        foreach( $allCustomers as $Customer )
+        {
+            //////////////////////////////////////////////////////////////////////////////////////////////////
+            /////////        Auto delete records from `radacct` after 6 months from creation       ///////////
+            //////////////////////////////////////////////////////////////////////////////////////////////////
+            DB::table($Customer->database.'.radacct')->whereRaw('acctstarttime + interval 6 month <= ?', [$created_at])->delete();
+
+            //////////////////////////////////////////////////////////////////////////////////////////////////
+            /////////        Auto delete records from `visitors` after 6 months from creation       ///////////
+            //////////////////////////////////////////////////////////////////////////////////////////////////
+            DB::table($Customer->database.'.visitors')->whereRaw('created_at + interval 6 month <= ?', [$created_at])->delete();
+
+            //////////////////////////////////////////////////////////////////////////////////////////////////
+            /////////        Auto delete records from `history` after 6 months from creation       ///////////
+            //////////////////////////////////////////////////////////////////////////////////////////////////
+            DB::table($Customer->database.'.history')->whereRaw('add_date + interval 6 month <= ?', [$today])->delete();
+
+            //////////////////////////////////////////////////////////////////////////////////////////////////
+            ///////// Auto delete records from `radreply`, `radcheck`, `radgroupcheck`, `radusergroup` ///////
+            //////////////////////////////////////////////////////////////////////////////////////////////////
+            DB::statement( 'TRUNCATE TABLE `'.$Customer->database.'`.`radreply`'.';');
+            DB::statement( 'TRUNCATE TABLE `'.$Customer->database.'`.`radcheck`'.';');
+            DB::statement( 'TRUNCATE TABLE `'.$Customer->database.'`.`radgroupcheck`'.';');
+            DB::statement( 'TRUNCATE TABLE `'.$Customer->database.'`.`radusergroup`'.';');
+            
+        }
+    echo "<center><h1>Done</h1></center>";
+	}
+	
+}

@@ -1,0 +1,121 @@
+<?php
+namespace App\Http\Controllers;
+
+use App\Http\Requests;
+use Illuminate\Http\Request;
+use App;
+use Hash;
+use Session;
+use Input;
+use Validator;
+use Auth;
+use Redirect;
+use DB;
+use Carbon\Carbon;
+
+class FawryCallback extends Controller
+{
+    public function Fawry(Request $request){
+        
+		date_default_timezone_set("Africa/Cairo");
+        $today = date("Y-m-d");
+        $today_time = date("g:i a");
+        $todayDateTime = $today." ".date("H:i:s");
+		
+		require_once '../config.php';
+		/*
+        $actual_link = "FAWRY--http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
+        $body = @file_get_contents('php://input');
+       
+        function getallheaders()
+        {
+            $headers = [];
+            foreach ($_SERVER as $name => $value)
+            {
+                if (substr($name, 0, 5) == 'HTTP_')
+                {
+                    $name = str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', substr($name, 5)))));
+                    $headers[$name] = $value;
+                } else if ($name == "Authorization") {
+                    $headers["Content-Type"] = $value;
+                } else if ($name == "CONTENT_LENGTH") {
+                    $headers["Content-Length"] = $value;
+                }
+            }
+            return $headers;
+        }
+        
+        $headers = getallheaders();
+        // return $headers->headers;
+        $headerToText = "";
+        foreach ($headers as $header => $value) {
+            //echo "$header: $value <br />\n";
+            $headerToText.= "$header: $value <br />\n";
+
+        }
+        
+		DB::table("test")->insert([['value1' => $actual_link, 'value2' => "$headerToText", 'value3' => $body]]);
+        return "1\nFawry Finished";
+		
+		*/
+		
+		// send post request
+		// $data = array(
+		// 	'code' => $grantCode,
+		// 	'redirect_uri' => 'https://demo.microsystem.com.eg/api/POSrocketCallback',
+		// 	'client_id' => 'l3L2Xt2RCr1vcsTr9wb53EtjwoIq83yPib452RJK',
+		// 	'client_secret' => 'Z4dL0VgshOAsOYyEwZl3bEXjEf4hxo6dpJyNTisj4YklG0AHISUooIXHe45iL4O5iKHxHHemQXChqxd2cv4t1f4wWpLxutHpyXZeb9ky1InXSi5UksBI0PWl6DEe4vbr',
+		// 	'grant_type' => 'authorization_code'
+		// );
+		$merchantRefNum = "999900642049999"; // must be unique
+		$customerProfileId = "101"; // must be unique
+		$amount = '20.00'; // must be dicimal ex(20.00)
+		$hashVar = $fawryMerchantCode.$merchantRefNum.$customerProfileId."PAYATFAWRY".$amount.$fawrySecurityKey;
+		$finalHashCode = hash('sha256', $hashVar);
+		$data = '
+		{
+			"merchantCode":"'.$fawryMerchantCode.'",
+			"merchantRefNum":"'.$merchantRefNum.'",
+			"customerProfileId":"'.$customerProfileId.'",
+			"customerMobile":"201061030454",
+			"customerEmail":"",
+			"paymentMethod":"PAYATFAWRY",
+			"amount":'.$amount.',
+			"currencyCode":"EGP",
+			"description":"Microsystem Hotspot",
+			"paymentExpiry":'.strtotime("+1 week").',
+			"chargeItems":[
+			   {
+				  "itemId":"897fa8e81be26df25db592e81c31c",
+				  "description":"Microsystem",
+				  "price":'.$amount.',
+				  "quantity":1
+			   }
+			],
+			"signature":"'.$finalHashCode.'"
+		}
+		';
+
+		// SENDING 
+		$context = stream_context_create(array('http' => array('method' => 'POST','header' => "Content-Type: application/json\r\n",'content' => "$data")));
+		$response = @file_get_contents($fawryIntegrationUrl, FALSE, $context);
+
+		// check if sending done succesfully
+		if(isset($response)){
+			$responseJson = json_decode($response);
+			if(isset($responseJson)){
+				if($responseJson->statusCode == "200"){
+					$referenceNumber = $responseJson->referenceNumber;
+				}
+			}
+		}
+
+		if(isset($referenceNumber)){
+			return "$referenceNumber";
+		}else{
+			return "There is an error: \n $response";
+		}
+
+			
+	}
+}

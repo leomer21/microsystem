@@ -1,0 +1,7 @@
+#video-center-text .bg {
+    background-image: url('./sections/videos/video-center-text/images/bg-13.jpg');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
+    opacity:0.15;
+}

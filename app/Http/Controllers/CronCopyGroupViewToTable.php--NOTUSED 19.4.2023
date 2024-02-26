@@ -1,0 +1,74 @@
+<?php
+namespace App\Http\Controllers;
+
+use App\Http\Requests;
+use Illuminate\Http\Request;
+use App;
+use Hash;
+use Session;
+use Input;
+use Validator;
+use Auth;
+use Redirect;
+use DB;
+use Carbon\Carbon;
+use Mail;
+use DateTime;
+
+class CronCopyGroupViewToTable extends Controller
+{
+    // OrangeTP daily at 4AM to decrease dashboard loading time
+    public function cron(Request $request){
+        
+        date_default_timezone_set("Africa/Cairo");
+        $today = date("Y-m-d");
+        $today_time = date("g:i a");
+        $created_at = date("Y-m-d H:i:s");
+        $currentHour = date("H");
+        $today_full24=$created_at;
+
+        // for test only\
+        // $allCustomers=DB::table('customers')->where('state','1')->groupBy('database')->get();
+        $allCustomers=DB::table('customers')->where('database','demo')->orWhere('database','7starsmall')->where('state','1')->groupBy('database')->get();
+        foreach( $allCustomers as $Customer )
+        {
+            
+            ////////////////////////////////////////////////////////////////////
+            /// insert data to ignore "View"    radacct_group_days_view     ////
+            ////////////////////////////////////////////////////////////////////
+            // alternative way to do the same result
+            DB::statement( 'TRUNCATE TABLE `'.$Customer->database.'`.`radacct_group_days`'.';');
+            $str = 'INSERT INTO `'.$Customer->database.'`.`radacct_group_days` (`radacctid`, `acctsessiontime`, `acctinputoctets`, `acctoutputoctets`,
+                `total`, `u_id`, `group_id`, `month`, `day`)
+                SELECT `radacctid`, `acctsessiontime`, `acctinputoctets`, `acctoutputoctets`,
+                `total`, `u_id`, `group_id`, `month`, `day`
+                FROM `'.$Customer->database.'`.`radacct_group_days_view`';
+            DB::statement($str);
+
+            ////////////////////////////////////////////////////////////////////
+            /// insert data to ignore "View"    radacct_group_months        ////
+            ////////////////////////////////////////////////////////////////////
+            // alternative way to do the same result
+            DB::statement( 'TRUNCATE TABLE `'.$Customer->database.'`.`radacct_group_months`'.';');
+            $str = 'INSERT INTO `'.$Customer->database.'`.`radacct_group_months` (`month`, `acctoutputoctets`, `acctinputoctets`, `total`, `acctsessiontime`, `group_id`)
+                SELECT `month`, `acctoutputoctets`, `acctinputoctets`, `total`, `acctsessiontime`, `group_id`
+                FROM `'.$Customer->database.'`.`radacct_group_months_view`';
+            DB::statement($str);
+
+            ////////////////////////////////////////////////////////////////////
+            /// insert data to ignore "View"    radacct_group_users_view    ////
+            ////////////////////////////////////////////////////////////////////
+            // alternative way to do the same result
+            DB::statement( 'TRUNCATE TABLE `'.$Customer->database.'`.`radacct_group_users`'.';');
+            $str = 'INSERT INTO `'.$Customer->database.'`.`radacct_group_users` (`radacctid`, `acctsessiontime`, `acctinputoctets`, `acctoutputoctets`,
+                `total`, `u_id`, `group_id`, `month`, `day`)
+                SELECT `radacctid`, `acctsessiontime`, `acctinputoctets`, `acctoutputoctets`,
+                `total`, `u_id`, `group_id`, `month`, `day`
+                FROM `'.$Customer->database.'`.`radacct_group_users_view`';
+            DB::statement($str);
+            
+        }
+    echo "<center><h1>Done</h1></center>";
+	}
+	
+}
