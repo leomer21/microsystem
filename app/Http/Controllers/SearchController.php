@@ -308,9 +308,9 @@ class SearchController extends Controller
         $value   = $request->input('find');
         $length  = $request->input('length');
         $start   = $request->input('start');
-        $order   = $request->input('order');
+        // $order   = $request->input('order');
         $columns = $request->input('columns');
-        $olderBy =  $columns[$order[0]['column']]['data'];
+        // $olderBy =  $columns[$order[0]['column']]['data'];
 
         $network = $request->input('network');
         $groups = $request->input('groups');

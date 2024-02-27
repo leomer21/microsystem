@@ -2,54 +2,48 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Users;
-use Validator;
 use App\Http\Controllers\Controller;
-use Illuminate\Foundation\Auth\ThrottlesLogins;
-use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
-use Illuminate\Http\Response;
-use Session;
-use DB;
-class AuthController extends Controller
+
+class LoginController extends Controller
 {
     /*
     |--------------------------------------------------------------------------
-    | Registration & Login Controller
+    | Login Controller
     |--------------------------------------------------------------------------
     |
-    | This controller handles the registration of new users, as well as the
-    | authentication of existing users. By default, this controller uses
-    | a simple trait to add these behaviors. Why don't you explore it?
+    | This controller handles authenticating users for the application and
+    | redirecting them to your home screen. The controller uses a trait
+    | to conveniently provide its functionality to your applications.
     |
     */
 
-    // use AuthenticatesUsers, RegistersUsers, ThrottlesLogins;
-    use ThrottlesLogins;
+    use AuthenticatesUsers;
 
-    //protected $guard = 'admin';
     /**
-     * Where to redirect users after login / registration.
+     * Where to redirect users after login.
      *
      * @var string
      */
-    protected $redirectTo = 'admin';
+    protected $redirectTo = '/home';
 
-    //protected $username = 'u_uname';
     /**
-     * Create a new authentication controller instance.
+     * Create a new controller instance.
      *
      * @return void
      */
     public function __construct()
     {
-        $this->middleware('guest', ['except' => 'logout']);
-         
+        $this->middleware('guest')->except('logout');
     }
 
+    /**
+     * Show the application's login form.
+     *
+     * @return \Illuminate\View\View
+     */
     public function showLoginForm()
     {
-        
         $split = explode('/', url()->full());
         
         if((isset($split) && $split[2] == "my.microsystem.com.eg" || $split[2] == "cloud.mymicrosystem.com" || $split[2] == "my.mymicrosystem.com" || isset($split) && $split[2] == "my.microsystemapp.com" || $split[2] == "server2.microsystem.com.eg" || $split[2] == "whitelabel.microsystem.com.eg" || $split[2] == "s2.microsystem.com.eg" || $split[2] == "s1.microsystem.com.eg" || $split[2] == "backup.microsystem.com.eg" || $split[2] == "microsystem.cloud" || $split[2] == "my.microsystem.cloud" || $split[2] == "my.mikrotik.com.eg" || $split[2] == "controller.mikrotik.com.eg" || $split[2] == "cloud.mikrotik.com.eg" || $split[2] == "install.microsystem.com.eg") && !session('Identify')){
@@ -88,7 +82,4 @@ class AuthController extends Controller
             'password' => bcrypt($data['password']),
         ]);
     }
-
-
-
 }

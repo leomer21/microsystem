@@ -91,7 +91,8 @@
 <!-- Page header -->
 <?php 
     // $dashboardType=App\Settings::where('type','dashboard_type')->where('state',Auth::user()->id)->first(); 
-    if(@count($dashboardType)==0){
+    
+    if($dashboardType->count()===0){
         App\Settings::insert(['type' => 'dashboard_type', 'value' => 'internetManagement','state'=>Auth::user()->id]);
         $dashboardType=App\Settings::where('type','dashboard_type')->where('state',Auth::user()->id)->first(); 
     }

@@ -2397,6 +2397,77 @@ class LandingController extends Controller
         }
     }
 
+    public function getBrowserName() {
+        $browser = $_SERVER['HTTP_USER_AGENT'];
+        $browserName = '';
+        if (strpos($browser, 'MSIE') !== false) {
+            $browserName = 'Internet Explorer';
+        } elseif (strpos($browser, 'Firefox') !== false) {
+            $browserName = 'Mozilla Firefox';
+        } elseif (strpos($browser, 'Chrome') !== false) {
+            $browserName = 'Google Chrome';
+        } elseif (strpos($browser, 'Opera') !== false) {
+            $browserName = 'Opera';
+        } else {
+            $browserName = 'Unknown';
+        }
+
+        return $browserName;
+    }
+
+    public function getOsName() {
+        $userAgent = $_SERVER['HTTP_USER_AGENT'];
+        $osname = null;
+        if (strpos($userAgent, 'Windows') !== false) {
+            $osName = 'Windows';
+        } elseif (strpos($userAgent, 'Mac') !== false) {
+            $osName = 'Mac';
+        } elseif (strpos($userAgent, 'Linux') !== false) {
+            $osName = 'Linux';
+        } else {
+            $osName = 'Unknown';
+        }
+
+        return $osName;
+    }
+
+    public function getDeviceName() {
+        $userAgent = $_SERVER['HTTP_USER_AGENT'];
+        $deviceName = null;
+        if (strpos($userAgent, 'iPhone') !== false) {
+            $deviceName = 'iPhone';
+        } elseif (strpos($userAgent, 'iPad') !== false) {
+            $deviceName = 'iPad';
+        } elseif (strpos($userAgent, 'Android') !== false) {
+            $deviceName = 'Android Device';
+        } elseif (strpos($userAgent, 'Windows Phone') !== false) {
+            $deviceName = 'Windows Phone';
+        } elseif (strpos($userAgent, 'Windows NT') !== false) {
+            $deviceName = 'Windows PC/Tablet';
+        } elseif (strpos($userAgent, 'Macintosh') !== false) {
+            $deviceName = 'Mac';
+        } elseif (strpos($userAgent, 'Linux') !== false) {
+            $deviceName = 'Linux PC';
+        } else {
+            $deviceName = 'Unknown';
+        }
+
+        return $deviceName;
+    }
+
+    public function getLanguage() {
+        $clientLanguage = null;
+        if (isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
+            $acceptLanguage = $_SERVER['HTTP_ACCEPT_LANGUAGE'];
+            // Extract the first language from the list
+            $languages = explode(',', $acceptLanguage);
+            $clientLanguage = strtolower(trim($languages[0]));
+        } else {
+            $clientLanguage = 'Unknown';
+        }
+
+        return $clientLanguage;
+    }
     /**
      *
      * Get Visitor  Info and insert to the database
@@ -2407,10 +2478,15 @@ class LandingController extends Controller
         // Get User Agent
         $agent = $_SERVER['HTTP_USER_AGENT'];
         $ip = $this->getClientIP();
-        $browser_name = Identify::browser()->getName();
-        $os = Identify::os()->getName();
-        $device_name = Identify::device()->getName();
-        $lang = Identify::lang()->getLanguage();
+        
+        // $browser_name = Identify::browser()->getName();
+        $browser_name = $this->getBrowserName();
+        // $os = Identify::os()->getName();
+        $os = $this->getOsName();
+        // $device_name = Identify::device()->getName();
+        $device_name = $this->getDeviceName();
+        // $lang = Identify::lang()->getLanguage();
+        $lang = $this->getLanguage();
 
         // Check if the user is logged in
         if (Auth::check()) :
